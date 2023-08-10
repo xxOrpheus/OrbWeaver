@@ -1,0 +1,216 @@
+var express = require('express');
+var app = express();
+var fs = require("fs");
+const {
+    v4: uuidv4
+} = require('uuid');
+uuidv4(); // ⇨ '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed'
+
+app.get('/new-group', function(req, res) {
+    var groupID = uuidv4();
+
+});
+
+var groups = [];
+var newGroup = {
+    "creator": "",
+    "users": [],
+    "world": 0,
+    "id":     0,
+    "active": 0
+};
+
+var newUser = {
+    "name": "",
+    "active": 0,
+    "status": 0,
+    "team": 0,
+    "prop": 0
+}
+
+function currentTime() {
+    return Math.floor(Date.now() / 1000);
+}
+
+function isValidName(name) {
+    const regex = /^[a-zA-Z\d\-_\s]{1,12}$/i;
+    valid = regex.test(name);
+    console.log("valid name '" + name + "': " + valid);
+    return valid;
+}
+
+function isValidWorld(world) {
+    world = Number(world);
+    return (world > 300 && world < 581);
+}
+
+// start group functions
+
+function createGroup(creator, world) {
+    if (isValidName(creator)) {
+        if (!isValidWorld(world)) {
+            throw new Error(4); // invalid world
+        }
+        var addGroup = newGroup;
+        addGroup.creator = creator;
+        addGroup.users = [];
+        addGroup.world = world;
+        addGroup.id = uuidv4();
+        addGroup.active = currentTime();
+        addGroup.findLowersScore = false;
+        groups[addGroup.id] = addGroup;
+        addUser(addGroup.id, creator, world);
+        return addGroup.id;
+    } else {
+        throw new Error(1);
+    }
+}
+
+function addUser(id, user, world) {
+    if (isValidName(user)) {
+        if (groups[id].world != world) {
+            throw new Error(3); // not on the same world 
+        }
+        const addUser = newUser;
+        addUser.name = user;
+        addUser.uid = uuidv4();
+        addUser.active = currentTime();
+        var u = groups[id].users;
+       	u.users.push(addUser);
+       	console.log(	groups[id].users);
+       	groups[id].users = u;
+        //console.log(addUser);
+        return newUser;
+    } else {
+        throw new Error(1); // invalid name
+    }
+}
+
+function removeUser(id, user) {
+    for (const user in groups[id].users) {
+        if (user.name == user) {
+            delete groups[id].users[user];
+            return true;
+        }
+    }
+    return false;
+}
+
+function setTeams() {
+
+    return true;
+}
+
+function startGame() {
+
+}
+
+function userFound(id, found, seeker) {
+    found = groups[id].getUser(found);
+    seeker = groups[id].getUser(seeker);
+    if (found && seeker) {
+        found.setStatus('found');
+        seeker.modScore(1);
+        if (groups[id].findLowersScore == true) {
+            found.modScore(-1);
+        }
+        return true;
+    }
+    return false;
+}
+
+function endGame() {
+
+}
+
+
+function getUsers(group) {
+    return groups[group].users;
+}
+
+function groupNotify(group) {
+    groups[group] = currentTime();
+}
+
+// end group functions
+
+
+// START USER FUNCTIONS 
+
+
+function setTeam(id, user, team) {
+    user = groups[id][user];
+    if (user) {
+        user.team = team;
+        return true;
+    }
+    return false;
+}
+
+function setStatus(id, user, status) {
+    user = groups[id][user];
+    if (user) {
+        if (status == 'found') status = 0;
+        if (status == 0 || status == 1 || status == 2) {
+            user.status = status;
+        }
+    }
+}
+
+function setProp(id, user, propId) {
+    user = groups[id][user];
+    if (user) {
+        propId = Number(propId);
+        if (propId > 0) {
+            user.prop = propId;
+        }
+    }
+}
+
+function getProp(id, user) {
+    user = groups[id][user];
+    if (user) {
+        return user.prop;
+    } else {
+        return false;
+    }
+}
+
+function userNotify() {
+    this.active = currentTime();
+}
+
+// END USER FUNCTIONS
+
+// error handler -- probably delete this
+try {
+	var gid = createGroup("davesnothere", 420);
+	addUser(gid, "asdfa", 420);
+	addUser(gid, "asdfgewegfa", 420);
+	addUser(gid, "asdnstjsfa", 420);
+	addUser(gid, "asejetjdfa", 420);
+	//console.log(groups[gid].users);
+} catch (error) {
+    error.message = Number(error.message);
+    switch (error.message) {
+        case 1:
+            console.log("invalid name");
+            break;
+        case 2:
+            console.log("creator was not in list of users some how");
+            break;
+        case 3:
+            console.log("not on same world");
+            break;
+        case 4:
+            console.log("invalid world");
+            break;
+    }
+}
+
+
+var server = app.listen(8081, function() {
+    var host = server.address().address
+    var port = server.address().port
+    console.log("Prop hunt server launched on http://%s:%s", host, port)
+});
