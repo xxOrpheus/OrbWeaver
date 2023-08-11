@@ -9,7 +9,6 @@ class PropHuntGroupList {
     createGroup(creator, world) {
         if (!this.groupExists(creator)) {
             const newGroup = new PropHuntGroup(creator, world);
-            console.debug(newGroup);
             if (!newGroup.code) {
                 this.groups[newGroup.getGroupID()] = newGroup;
                 console.debug(creator + " new group: " + newGroup.getGroupID());
@@ -19,17 +18,19 @@ class PropHuntGroupList {
                 return newGroup;
             }
         } else {
-            return Util.jsonError("group exists", 1);
+            return Util.jsonError("group exists", 18);
         }
     }
 
     joinGroup(username, world, group) {
         var g = this.groups[group];
-        console.debug(group);
-        console.debug(this.groups);
         if (g) {
-            g.addUser(username, world);
-            return g;
+            var added = g.addUser(username, world);
+            if(!added.code) {
+                return this.groups[group];
+            } else {
+                return added;
+            }
         } else {
             return Util.jsonError("group does not exist", 16)
         }

@@ -19,9 +19,9 @@ class PropHuntGroup {
             this.id = uuidv4();
             this.active = Util.currentTime();
             this.findLowersScore = false; // todo
+            this.passcode = "";
             return this;
         } else {
-            console.debug("invalid name " + creator);
             return Util.jsonError("invalid username", 10);
         }
     }
@@ -37,7 +37,7 @@ class PropHuntGroup {
                 return Util.jsonError("not on same world", 11); // not on the same world 
             }
             var newUser = new PropHuntUser(user);
-            if(user == this.creator) {
+            if (user == this.creator) {
                 newUser.creator = 1;
             }
             this.users[newUser.id] = newUser;
@@ -60,18 +60,22 @@ class PropHuntGroup {
     getUser(id) {
         return this.users[id];
     }
-    
+
     userInSession(name) {
-        for(const user in this.users) {
-            if(this.users[user].name == name) {
+        for (const user in this.users) {
+            if (this.users[user].name == name) {
                 return true;
             }
         }
         return false;
     }
-    
-    startGame() {
 
+    startGame(passcode) {
+        if(passcode == this.passcode) {
+
+        } else {
+            return Util.jsonError({"error": "invalid passcode", code: 17});
+        }
     }
 
     endGame() {
@@ -86,7 +90,7 @@ class PropHuntGroup {
         this.active = Util.currentTime();
     }
 
-    
+
     /*
      * User functions
      */
@@ -124,6 +128,23 @@ class PropHuntGroup {
     userNotify() {
         this.users[user].active = Util.currentTime();
     }
+
+    setupTeams() {
+        const usersArray = Object.values(this.users);
+        Util.shuffleArray(usersArray);
+        
+        const [group1, group2] = Util.splitArrayEvenly(usersArray);
+        
+        for(const user in group1) {
+            this.users[group1[user].id].team = 1;
+        }
+
+        for(const user in group2) {
+            this.users[group2[user].id].team = 2
+        }
+        return this.users;
+    }
+
 }
 
 module.exports = PropHuntGroup;

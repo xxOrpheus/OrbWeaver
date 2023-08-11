@@ -17,6 +17,20 @@ class Util {
     static jsonError(msg, code) {
         return { "error": msg, "code": Number(code) }
     }
+
+    static shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+    
+    static splitArrayEvenly(array) {
+        const middle = Math.floor(array.length / 2);
+        const firstHalf = array.slice(0, middle);
+        const secondHalf = array.slice(middle);
+        return [firstHalf, secondHalf];
+    }
 }
 
 module.exports = Util;

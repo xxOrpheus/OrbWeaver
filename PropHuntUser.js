@@ -12,6 +12,9 @@ class PropHuntUser {
         this.team = 0; // 0: prop, 1: seeker
         this.prop = 0; // model id
         this.id = uuidv4();
+        this.x = 0;
+        this.y = 0;
+        this.z = 0;
         return this;
     }
 }
