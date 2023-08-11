@@ -74,9 +74,12 @@ app.get('/start-game', function (req, res) {
         if (!group.code) {
             group.setupTeams();
             group.countdown = setInterval(function(group) {
+                group.startTimer = group.timer;
                 group.timer -= 1;
                 if(group.timer <= 0) {
-                    clearInterval(group.countdown, )
+                    clearInterval(group.countdown);
+                    group.timer = group.startTimer;
+                    group.countdown = false;
                 }
             },  
             1000);
