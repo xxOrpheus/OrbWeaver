@@ -19,8 +19,10 @@ class PropHuntGroup {
             this.world = world;
             this.id = uuidv4();
             this.active = Util.currentTime();
+            this.started = 0;
             this.findLowersScore = false; // todo
             this.passcode = "";
+            this.countdown = false;
             return this;
         } else {
             return Util.jsonError("invalid username", 10);
@@ -35,7 +37,7 @@ class PropHuntGroup {
         var validName = Util.isValidName(user);
         if (validName && !this.userInSession(user)) {
             if (this.world != world) {
-                return Util.jsonError("not on same world", 11); // not on the same world 
+                return Util.jsonError("not on same world", 11); 
             }
             var newUser = new PropHuntUser(user);
             if (user == this.creator) {
@@ -44,7 +46,7 @@ class PropHuntGroup {
             this.users[newUser.id] = newUser;
             return newUser;
         } else {
-            return !validName ? Util.jsonError("invalid username", 10) : Util.jsonError("already in game", 15); // invalid name or already in game 
+            return !validName ? Util.jsonError("invalid username", 10) : Util.jsonError("already in game", 15);
         }
     }
 
@@ -74,7 +76,8 @@ class PropHuntGroup {
     startGame(passcode) {
         var verified = this.verifyPasscode(passcode);
         if(verified) {
-
+            this.started = true;
+            this.countdown = false;
         } else if(verified.code) {
             return verified
         }
@@ -121,10 +124,10 @@ class PropHuntGroup {
      * User functions
      */
 
-    setUserStatus(status) {
+    setUserStatus(id, status) {
         if (status == 'found') status = 0;
         if (status == 0 || status == 1 || status == 2) {
-            this.users[user].status = status;
+            this.users[id].status = status;
         }
     }
 
@@ -151,23 +154,26 @@ class PropHuntGroup {
         return this.users[id].name;
     }
 
-    userNotify() {
-        this.users[user].active = Util.currentTime();
+    userNotify(id) {
+        this.users[id].active = Util.currentTime();
     }
 
     setupTeams() {
         const usersArray = Object.values(this.users);
-        Util.shuffleArray(usersArray);
-
+        Util.shuffleArray(usersArray); // randomly sort the users
+    
         const [group1, group2] = Util.splitArrayEvenly(usersArray);
-
-        for (const user in group1) {
-            this.users[group1[user].id].team = 1;
+        const [largerGroup, smallerGroup] = group1.length > group2.length ? [group1, group2] : [group2, group1];
+        const [team1, team2] = largerGroup === group1 ? [2, 1] : [1, 2];
+    
+        for (const user of largerGroup) { //props are always the larger group 
+            this.users[user.id].team = team1;
         }
-
-        for (const user in group2) {
-            this.users[group2[user].id].team = 2
+    
+        for (const user of smallerGroup) {
+            this.users[user.id].team = team2;
         }
+    
         return this.users;
     }
 
