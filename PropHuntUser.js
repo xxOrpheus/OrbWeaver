@@ -9,12 +9,11 @@ class PropHuntUser {
         this.name = name;
         this.active = Util.currentTime();
         this.status = 0; // prop: 0 = not found, 1 = found, 
-        this.team = 0; // 0: prop, 1: seeker
+        this.team = 0; // 0: prop, 1: seeker, 2: spectator
         this.prop = 0; // model id
         this.id = uuidv4();
-        this.x = 0;
-        this.y = 0;
-        this.z = 0;
+        this.location = {"x": 0, "y": 0, "z": 0};
+        this.orientation = 0;
         return this;
     }
 }

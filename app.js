@@ -1,6 +1,5 @@
-var express = require('express');
+const express = require('express');
 var app = express();
-var fs = require("fs");
 
 var PropHuntServer = require("./PropHuntServer.js");
 var phs = new PropHuntServer();
@@ -10,7 +9,7 @@ var gg = phs.getGroupList().createGroup("davesnothereman", 420);
 phs.getGroupList().joinGroup("asdfasdf1", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf2", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf3", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf4", 420, gg.getGroupID());
+/*phs.getGroupList().joinGroup("asdfasdf4", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf5", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf6", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf7", 420, gg.getGroupID());
@@ -18,7 +17,7 @@ phs.getGroupList().joinGroup("asdfasdf8", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf9", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf10", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf11", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf12", 420, gg.getGroupID());
+phs.getGroupList().joinGroup("asdfasdf12", 420, gg.getGroupID());*/
 gg.setupTeams();
 
 
@@ -72,6 +71,17 @@ app.get('/start-game', function (req, res) {
     var group = phs.getGroupList().getGroup(req.query.group);
     if (!group.code) {
         group.setupTeams();
+        if (!group.code) {
+            group.setupTeams();
+            group.countdown = setInterval(function(group) {
+                group.timer -= 1;
+                if(group.timer <= 0) {
+                    clearInterval(group.countdown, )
+                }
+            },  
+            1000);
+    
+        }
 
     }
     res.end(JSON.stringify(group));

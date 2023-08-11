@@ -22,7 +22,7 @@ class PropHuntGroup {
             this.started = 0;
             this.findLowersScore = false; // todo
             this.passcode = "";
-            this.countdown = false;
+            this.countdown = 60;
             return this;
         } else {
             return Util.jsonError("invalid username", 10);
