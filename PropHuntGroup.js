@@ -8,7 +8,7 @@ const {
 uuidv4(); // ⇨ '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed'
 
 class PropHuntGroup {
-    constructor(creator, world) {
+    constructor(creator, world, passcode) {
         if (Util.isValidName(creator)) {
             creator = creator.trim();
             if (!Util.isValidWorld(world)) {
@@ -20,9 +20,12 @@ class PropHuntGroup {
             this.id = uuidv4();
             this.active = Util.currentTime();
             this.started = 0;
-            this.findLowersScore = false; // todo
-            this.passcode = "";
-            this.countdown = 60;
+            this.findLowersScore = false;
+            this.setPasscode(passcode);
+            this.countdown = false;
+            this.startTimer = 10;
+            this.timer = this.startTimer;
+            this.started = false;
             return this;
         } else {
             return Util.jsonError("invalid username", 10);
@@ -37,7 +40,7 @@ class PropHuntGroup {
         var validName = Util.isValidName(user);
         if (validName && !this.userInSession(user)) {
             if (this.world != world) {
-                return Util.jsonError("not on same world", 11); 
+                return Util.jsonError("not on same world", 11);
             }
             var newUser = new PropHuntUser(user);
             if (user == this.creator) {
@@ -75,10 +78,27 @@ class PropHuntGroup {
 
     startGame(passcode) {
         var verified = this.verifyPasscode(passcode);
-        if(verified) {
-            this.started = true;
-            this.countdown = false;
-        } else if(verified.code) {
+        if (verified) {
+            this.setupTeams();
+            if (!this.code) {
+                this.setupTeams();
+                this.gameLog("Teams selected, let the countdown begin (" + this.startTimer + "s)");
+                var groupCountdown = function () {
+                    this.startTimer = this.timer;
+                    this.timer -= 1;
+                    if (this.timer <= 0) {
+                        clearInterval(this.countdown);
+                        this.timer = this.startTimer;
+                        this.countdown = false;
+                        this.started = true;
+                        this.gameLog("Started the game");
+                    }
+                }
+                this.countdown = setInterval(groupCountdown.bind(this),
+                    1000);
+
+            }
+        } else if (verified.code) {
             return verified
         }
         return false;
@@ -102,22 +122,26 @@ class PropHuntGroup {
             this.passcode = hash;
         } catch (err) {
             console.debug(err);
-            return Util.jsonError({"error": "error while verifying", code:19});
+            return Util.jsonError({ "error": "error while verifying", code: 19 });
         }
     }
 
     async verifyPasscode(passcode) {
         try {
             const hash = await argon2.hash(passcode + Util.salted());
-            if(hash == this.passcode) {
+            if (hash == this.passcode) {
                 return true;
             }
             return false;
         } catch (err) {
             console.debug(err);
-            return Util.jsonError({"error": "error while verifying", code:19});
+            return Util.jsonError({ "error": "error while verifying", code: 19 });
         }
         return false;
+    }
+
+    gameLog(msg) {
+        console.debug("[" + this.id + "] (" + this.creator + "): " + msg);
     }
 
     /*
@@ -161,19 +185,19 @@ class PropHuntGroup {
     setupTeams() {
         const usersArray = Object.values(this.users);
         Util.shuffleArray(usersArray); // randomly sort the users
-    
+
         const [group1, group2] = Util.splitArrayEvenly(usersArray);
         const [largerGroup, smallerGroup] = group1.length > group2.length ? [group1, group2] : [group2, group1];
         const [team1, team2] = largerGroup === group1 ? [2, 1] : [1, 2];
-    
+
         for (const user of largerGroup) { //props are always the larger group 
             this.users[user.id].team = team1;
         }
-    
+
         for (const user of smallerGroup) {
             this.users[user.id].team = team2;
         }
-    
+
         return this.users;
     }
 

@@ -6,9 +6,9 @@ class PropHuntGroupList {
         this.groups = {};
     }
 
-    createGroup(creator, world) {
+    createGroup(creator, world, passcode) {
         if (!this.groupExists(creator)) {
-            const newGroup = new PropHuntGroup(creator, world);
+            const newGroup = new PropHuntGroup(creator, world, passcode);
             if (!newGroup.code) {
                 this.groups[newGroup.getGroupID()] = newGroup;
                 console.debug(creator + " new group: " + newGroup.getGroupID());
