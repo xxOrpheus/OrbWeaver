@@ -31,6 +31,10 @@ class Util {
         const secondHalf = array.slice(middle);
         return [firstHalf, secondHalf];
     }
+
+    static salted() {
+        return "APRM4rgKfR3jL&N6gMVM";
+    }
 }
 
 module.exports = Util;

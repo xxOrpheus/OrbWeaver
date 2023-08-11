@@ -1,5 +1,6 @@
 var Util = require('./Util.js');
 var PropHuntUser = require('./PropHuntUser.js');
+const argon2 = require('argon2');
 
 const {
     v4: uuidv4
@@ -71,11 +72,13 @@ class PropHuntGroup {
     }
 
     startGame(passcode) {
-        if(passcode == this.passcode) {
+        var verified = this.verifyPasscode(passcode);
+        if(verified) {
 
-        } else {
-            return Util.jsonError({"error": "invalid passcode", code: 17});
+        } else if(verified.code) {
+            return verified
         }
+        return false;
     }
 
     endGame() {
@@ -90,6 +93,29 @@ class PropHuntGroup {
         this.active = Util.currentTime();
     }
 
+    async setPasscode(passcode) {
+        try {
+            const hash = await argon2.hash(passcode + Util.salted());
+            this.passcode = hash;
+        } catch (err) {
+            console.debug(err);
+            return Util.jsonError({"error": "error while verifying", code:19});
+        }
+    }
+
+    async verifyPasscode(passcode) {
+        try {
+            const hash = await argon2.hash(passcode + Util.salted());
+            if(hash == this.passcode) {
+                return true;
+            }
+            return false;
+        } catch (err) {
+            console.debug(err);
+            return Util.jsonError({"error": "error while verifying", code:19});
+        }
+        return false;
+    }
 
     /*
      * User functions
@@ -132,14 +158,14 @@ class PropHuntGroup {
     setupTeams() {
         const usersArray = Object.values(this.users);
         Util.shuffleArray(usersArray);
-        
+
         const [group1, group2] = Util.splitArrayEvenly(usersArray);
-        
-        for(const user in group1) {
+
+        for (const user in group1) {
             this.users[group1[user].id].team = 1;
         }
 
-        for(const user in group2) {
+        for (const user in group2) {
             this.users[group2[user].id].team = 2
         }
         return this.users;
