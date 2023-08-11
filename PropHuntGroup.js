@@ -9,20 +9,20 @@ uuidv4(); // ⇨ '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed'
 class PropHuntGroup {
     constructor(creator, world) {
         if (Util.isValidName(creator)) {
-            var addedCreator = this.addUser(creator, world);
-            if (addedCreator) {
-                if (!Util.isValidWorld(world)) {
-                    return 14;
-                }
-                this.creator = creator;
-                this.users = {};
-                this.world = world;
-                this.id = uuidv4();
-                this.active = Util.currentTime();
-                this.findLowersScore = false; // todo
+            creator = creator.trim();
+            if (!Util.isValidWorld(world)) {
+                return Util.jsonError("invalid world", 14);
             }
+            this.creator = creator;
+            this.users = {};
+            this.world = world;
+            this.id = uuidv4();
+            this.active = Util.currentTime();
+            this.findLowersScore = false; // todo
+            return this;
         } else {
-            return 10;
+            console.debug("invalid name " + creator);
+            return Util.jsonError("invalid username", 10);
         }
     }
 
@@ -31,15 +31,19 @@ class PropHuntGroup {
      */
 
     addUser(user, world) {
-        if (Util.isValidName(user) && !this.userInSession(user)) {
+        var validName = Util.isValidName(user);
+        if (validName && !this.userInSession(user)) {
             if (this.world != world) {
-                return 11; // not on the same world 
+                return Util.jsonError("not on same world", 11); // not on the same world 
             }
             var newUser = new PropHuntUser(user);
+            if(user == this.creator) {
+                newUser.creator = 1;
+            }
             this.users[newUser.id] = newUser;
             return newUser;
         } else {
-            return 10; // invalid name
+            return !validName ? Util.jsonError("invalid username", 10) : Util.jsonError("already in game", 15); // invalid name or already in game 
         }
     }
 
