@@ -28,6 +28,8 @@ class PropHuntGroup {
             this.startTimer = 60;
             this.timer = this.startTimer;
             this.started = false;
+            this.location = {"P1": {"x": 0, "y": 0, "z": 0}, "P2": {"x": 0, "y": 0, "z": 0}}; // players can choose a square stage to play in (size not restricting)
+
             return this;
         } else {
             return Util.jsonError("invalid username", 10);
@@ -111,6 +113,9 @@ class PropHuntGroup {
         return this.id;
     }
 
+    /*
+    * Updates the last active time for the group
+    */
     groupNotify() {
         this.active = Util.currentTime();
     }
@@ -118,7 +123,7 @@ class PropHuntGroup {
     async setPasscode(passcode) {
         try {
             const hash = await argon2.hash(passcode + Util.salted());
-            this.passcode = hash;
+            this.passcode = passcode = hash;
             return hash;
         } catch (err) {
             console.debug(err);
