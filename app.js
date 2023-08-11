@@ -9,7 +9,7 @@ var gg = phs.getGroupList().createGroup("davesnothereman", 420, "hi");
 phs.getGroupList().joinGroup("asdfasdf1", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf2", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf3", 420, gg.getGroupID());
-/*phs.getGroupList().joinGroup("asdfasdf4", 420, gg.getGroupID());
+phs.getGroupList().joinGroup("asdfasdf4", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf5", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf6", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf7", 420, gg.getGroupID());
@@ -17,7 +17,7 @@ phs.getGroupList().joinGroup("asdfasdf8", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf9", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf10", 420, gg.getGroupID());
 phs.getGroupList().joinGroup("asdfasdf11", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf12", 420, gg.getGroupID());*/
+phs.getGroupList().joinGroup("asdfasdf12", 420, gg.getGroupID());
 gg.startGame("hi");
 
 

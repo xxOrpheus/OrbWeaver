@@ -21,9 +21,11 @@ class PropHuntGroup {
             this.active = Util.currentTime();
             this.started = 0;
             this.findLowersScore = false;
+            this.passcode = "";
             this.setPasscode(passcode);
+            passcode = this.passcode; // replace the unhashed password right away;
             this.countdown = false;
-            this.startTimer = 10;
+            this.startTimer = 60;
             this.timer = this.startTimer;
             this.started = false;
             return this;
@@ -76,9 +78,8 @@ class PropHuntGroup {
         return false;
     }
 
-    startGame(passcode) {
-        var verified = this.verifyPasscode(passcode);
-        if (verified) {
+    async startGame(passcode) {
+        if (await this.verifyPasscode(passcode)) {
             this.setupTeams();
             if (!this.code) {
                 this.setupTeams();
@@ -91,15 +92,13 @@ class PropHuntGroup {
                         this.timer = this.startTimer;
                         this.countdown = false;
                         this.started = true;
-                        this.gameLog("Started the game");
+                        this.gameLog("Game started (" + Object.keys(this.users).length + " players)");
                     }
                 }
                 this.countdown = setInterval(groupCountdown.bind(this),
                     1000);
 
             }
-        } else if (verified.code) {
-            return verified
         }
         return false;
     }
@@ -120,6 +119,7 @@ class PropHuntGroup {
         try {
             const hash = await argon2.hash(passcode + Util.salted());
             this.passcode = hash;
+            return hash;
         } catch (err) {
             console.debug(err);
             return Util.jsonError({ "error": "error while verifying", code: 19 });
@@ -128,20 +128,17 @@ class PropHuntGroup {
 
     async verifyPasscode(passcode) {
         try {
-            const hash = await argon2.hash(passcode + Util.salted());
-            if (hash == this.passcode) {
-                return true;
-            }
-            return false;
+            const hash = await argon2.verify(passcode, this.passcode + Util.salted());
+            passcode = hash;
+            return hash;
         } catch (err) {
-            console.debug(err);
             return Util.jsonError({ "error": "error while verifying", code: 19 });
         }
         return false;
     }
 
     gameLog(msg) {
-        console.debug("[" + this.id + "] (" + this.creator + "): " + msg);
+        console.log("\x1b[33m[\x1b[34m" + this.id + "\x1b[33m] (\x1b[31m" + this.creator + "\x1b[33m)\x1b[39m: \x1b[37m" + msg);
     }
 
     /*
