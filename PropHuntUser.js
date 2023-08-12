@@ -16,6 +16,11 @@ class PropHuntUser {
         this.orientation = 0;
         return this;
     }
+
+    login(token, data, client, server) {
+        console.debug(data);
+        console.debug(token);
+    }
 }
 
 module.exports = PropHuntUser;

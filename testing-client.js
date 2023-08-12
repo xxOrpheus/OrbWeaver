@@ -14,24 +14,31 @@ const packet = Packets.Packets;
 const packetAction = packet.USER_LOGIN;
 
 const messageBuffer = Buffer.alloc(1);
-messageBuffer.writeUInt8(packetAction, 0);
+// Create the JWT
+const jwtToken = "false";
+const username = "davesnothere";
+const password = "fuck";
+const world = 420;
 
-client.send(messageBuffer, 0, messageBuffer.length, serverPort, serverAddress, (err) => {
+// Construct the packet
+const actionBuffer = Buffer.alloc(1);
+actionBuffer.writeUInt8(packetAction, 0);
+
+const jwtBuffer = Buffer.from(jwtToken, 'utf8');
+
+const usernameBuffer = Buffer.from(username, 'utf8');
+const passwordBuffer = Buffer.from(password, 'utf8');
+
+const worldBuffer = Buffer.alloc(2);
+worldBuffer.writeUInt16BE(world, 0);
+
+const packetBuffer = Buffer.concat([actionBuffer, jwtBuffer, usernameBuffer, passwordBuffer, worldBuffer]);
+
+
+client.send(packetBuffer, 0, packetBuffer.length, serverPort, serverAddress, (err) => {
     if (err) {
         console.error('Error sending packet:', err);
     } else {
         console.log('Packet sent successfully!');
     }
 });
-
-/*
-const tokenBuffer = Buffer.from(token, 'utf8');
-
-const buffer = Buffer.alloc(3 + tokenBuffer.length + 2); // Action (1 byte) + JWT + UInt16BE (2 bytes)
-
-buffer.writeUInt8(1, 0); // Replace 1 with your desired action
-
-tokenBuffer.copy(buffer, 1); // Start copying at index 1
-
-buffer.writeUInt16BE(numberToSend, 1 + tokenBuffer.length);
-*/

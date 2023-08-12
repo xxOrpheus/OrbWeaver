@@ -1,4 +1,5 @@
 var PropHuntGroupList = require("./PropHuntGroupList.js");
+var PropHuntUser = require('./PropHuntUser.js');
 
 const dgram = require('dgram');
 const Config = require('./Config.js');
@@ -9,8 +10,8 @@ class PropHuntServer {
     groups;
 
     packetHandlers = {
-        [Packets.Packet.GROUP_NEW]: PropHuntGroupList.createGroup,
         [Packets.Packet.USER_LOGIN]: PropHuntUser.login,
+        [Packets.Packet.GROUP_NEW]: PropHuntGroupList.createGroup,
     };
 
     constructor() {
@@ -34,32 +35,28 @@ class PropHuntServer {
             let rIP = remote.address;
             let rPort = remote.port;
 
-            function clientLog(message) {
-                this.serverLog("\x1b[33m" + rIP + ":" + rPort + " " + message + "\x1b[39");
-            }
+            /* function clientLog(message) {
+                 this.serverLog("\x1b[33m" + rIP + ":" + rPort + " " + message + "\x1b[39");
+             }*/
 
             if (message.length < 3) {
-                clientLog("\x1b[31mMalformed packet: Insufficient data length");
+                this.serverLog("\x1b[31mMalformed packet: Insufficient data length");
                 return;
             }
 
-            const tokenLength = message.length - 3; // JWT length
-            const token = message.slice(1, 1 + tokenLength).toString('utf8'); // jwt authentication
+            const action = message.readUInt8(0);
 
-            if (action < 1 || action > Object.keys(packetHandlers).length) {
-                clientLog("\x1b[31mUnsupported packet action: " + action);
+            if (action < 0 || action > Packets.Packet.length) {
+                this.serverLog("\x1b[31mUnsupported packet action: " + Packets.Packets[action]);
                 return;
             }
 
             let packet = Packets.Packet;
-            const handler = packetHandlers[action];
-
-            if (handler) {
-                clientLog("said " + Packets.Packets[action]);
-                handler.call(token, message, remote, this);
-            } else {
-                clientLog("\x1b[31mUnsupported packet action: " + Packets.Packets[action]);
+            
+            if (action == packet.USER_LOGIN) {
+                console.debug(message.toString());
             }
+
         } catch (error) {
             this.serverLog("Error receiving packet");
             console.debug(error);
