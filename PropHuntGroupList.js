@@ -6,17 +6,18 @@ class PropHuntGroupList {
         this.groups = {};
     }
 
-    createGroup(creator, world, passcode) {
+    async createGroup(creator, world, passcode) {
         if (!this.groupExists(creator)) {
-            const newGroup = new PropHuntGroup(creator, world, passcode);
-            if (!newGroup.code) {
-                this.groups[newGroup.getGroupID()] = newGroup;
-                console.debug(creator + " new group: " + newGroup.getGroupID());
-                this.joinGroup(creator, world, newGroup.getGroupID());
-                return this.groups[newGroup.getGroupID()];
-            } else {
-                return newGroup;
-            }
+            const newGroup = new PropHuntGroup(creator, world);
+            return await newGroup.setPasscode(passcode).then(() => {
+                if (!newGroup.code) {
+                    this.groups[newGroup.getGroupID()] = newGroup;
+                    this.joinGroup(creator, world, newGroup.getGroupID());
+                    return this.groups[newGroup.getGroupID()];
+                } else {
+                    return newGroup;
+                }
+            });
         } else {
             return Util.jsonError("group exists", 18);
         }
@@ -26,7 +27,7 @@ class PropHuntGroupList {
         var g = this.groups[group];
         if (g) {
             var added = g.addUser(username, world);
-            if(!added.code) {
+            if (!added.code) {
                 return this.groups[group];
             } else {
                 return added;

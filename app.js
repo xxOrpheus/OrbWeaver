@@ -1,25 +1,10 @@
 const express = require('express');
+var Util = require('./Util.js');
 var app = express();
 
 var PropHuntServer = require("./PropHuntServer.js");
 var phs = new PropHuntServer();
 const rateLimit = require('express-rate-limit')
-
-var gg = phs.getGroupList().createGroup("davesnothereman", 420, "hi");
-phs.getGroupList().joinGroup("asdfasdf1", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf2", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf3", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf4", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf5", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf6", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf7", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf8", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf9", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf10", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf11", 420, gg.getGroupID());
-phs.getGroupList().joinGroup("asdfasdf12", 420, gg.getGroupID());
-gg.startGame("hi");
-
 
 
 
@@ -34,7 +19,7 @@ app.use(function (req, res, next) {
 });
 
 const limiter = rateLimit({
-    windowMs: 5000,
+    windowMs: 2000,
     max: 0,
     standardHeaders: true,
     legacyHeaders: false,
@@ -43,11 +28,14 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-app.get('/new-group', function (req, res) {
+app.get('/new-group', async function (req, res) {
     var username = req.query.username;
     var world = req.query.world;
-    var ggg = phs.getGroupList().createGroup(username, world);
-    res.end(JSON.stringify(ggg));
+    var passcode = req.query.passcode;
+    await phs.getGroupList().createGroup(username, world, passcode).then((result) => {
+        res.end(Util.safeResponse(result));
+    });
+
 });
 
 app.get('/join-group', function (req, res) {
@@ -57,9 +45,9 @@ app.get('/join-group', function (req, res) {
     var g = phs.getGroupList().getGroup(group);
     if (!g.code) {
         var join = phs.getGroupList().joinGroup(username, world, group);
-        res.end(JSON.stringify(join));
+        res.end(Util.safeResponse(join));
     } else {
-        res.end(JSON.stringify(g));
+        res.end(Util.safeResponse(g));
     }
 });
 
@@ -67,12 +55,20 @@ app.get('/leave-group', function (req, res) {
 
 });
 
-app.get('/start-game', function (req, res) {
+app.get('/start-game', async function (req, res) {
     var group = phs.getGroupList().getGroup(req.query.group);
-    if (!group.code) {
-
+    var start;
+    var passcode = req.query.passcode;
+    if (passcode) {
+        if (!group.code) {
+            group = await group.startGame(passcode).then((result) => {
+                return result;
+            });
+        }
+    } else {
+        group = Util.jsonError("please enter your passcode", 20);
     }
-    res.end(JSON.stringify(group));
+    res.end(Util.safeResponse(group));
 });
 
 app.get('/end-game', function (req, res) {

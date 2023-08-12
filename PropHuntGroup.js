@@ -8,6 +8,7 @@ const {
 uuidv4(); // ⇨ '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed'
 
 class PropHuntGroup {
+    #countdown = null;
     constructor(creator, world, passcode) {
         if (Util.isValidName(creator)) {
             creator = creator.trim();
@@ -21,14 +22,12 @@ class PropHuntGroup {
             this.active = Util.currentTime();
             this.started = 0;
             this.findLowersScore = false;
-            this.passcode = "";
-            this.setPasscode(passcode);
-            passcode = this.passcode; // replace the unhashed password right away;
+            this.passcode;
             this.countdown = false;
             this.startTimer = 60;
             this.timer = this.startTimer;
             this.started = false;
-            this.location = {"P1": {"x": 0, "y": 0, "z": 0}, "P2": {"x": 0, "y": 0, "z": 0}}; // players can choose a square stage to play in (size not restricting)
+            this.location = { "P1": { "x": 0, "y": 0, "z": 0 }, "P2": { "x": 0, "y": 0, "z": 0 } }; // players can choose a square stage to play in
 
             return this;
         } else {
@@ -81,9 +80,9 @@ class PropHuntGroup {
     }
 
     async startGame(passcode) {
-        if (await this.verifyPasscode(passcode)) {
-            this.setupTeams();
-            if (!this.code) {
+        return await Util.verifyPasscode(this.passcode, passcode).then((result) => {
+            if (result) {
+                console.debug("verify" + result);
                 this.setupTeams();
                 this.gameLog("Teams selected, let the countdown begin (" + this.startTimer + "s)");
                 var groupCountdown = function () {
@@ -99,10 +98,11 @@ class PropHuntGroup {
                 }
                 this.countdown = setInterval(groupCountdown.bind(this),
                     1000);
-
+                return this;
+            } else {
+                return Util.jsonError("invalid passcode", 21);
             }
-        }
-        return false;
+        });
     }
 
     endGame() {
@@ -118,28 +118,6 @@ class PropHuntGroup {
     */
     groupNotify() {
         this.active = Util.currentTime();
-    }
-
-    async setPasscode(passcode) {
-        try {
-            const hash = await argon2.hash(passcode + Util.salted());
-            this.passcode = passcode = hash;
-            return hash;
-        } catch (err) {
-            console.debug(err);
-            return Util.jsonError({ "error": "error while verifying", code: 19 });
-        }
-    }
-
-    async verifyPasscode(passcode) {
-        try {
-            const hash = await argon2.verify(passcode, this.passcode + Util.salted());
-            passcode = hash;
-            return hash;
-        } catch (err) {
-            return Util.jsonError({ "error": "error while verifying", code: 19 });
-        }
-        return false;
     }
 
     gameLog(msg) {
@@ -182,6 +160,13 @@ class PropHuntGroup {
 
     userNotify(id) {
         this.users[id].active = Util.currentTime();
+    }
+
+    async setPasscode(passcode) {
+        await Util.hash(passcode).then((result) => {
+            this.passcode = result;
+            return this.passcode;
+        });
     }
 
     setupTeams() {
