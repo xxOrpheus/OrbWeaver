@@ -9,7 +9,7 @@ uuidv4(); // ⇨ '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed'
 
 class PropHuntGroup {
     #countdown = null;
-    constructor(creator, world, passcode) {
+    constructor(creator, world, password) {
         if (Util.isValidName(creator)) {
             creator = creator.trim();
             if (!Util.isValidWorld(world)) {
@@ -22,7 +22,7 @@ class PropHuntGroup {
             this.active = Util.currentTime();
             this.started = 0;
             this.findLowersScore = false;
-            this.passcode;
+            this.password;
             this.countdown = false;
             this.startTimer = 60;
             this.timer = this.startTimer;
@@ -79,8 +79,8 @@ class PropHuntGroup {
         return false;
     }
 
-    async startGame(passcode) {
-        return await Util.verifyPasscode(this.passcode, passcode).then((result) => {
+    async startGame(password) {
+        return await Util.verifyPasscode(this.password, password).then((result) => {
             if (result) {
                 console.debug("verify" + result);
                 this.setupTeams();
@@ -100,7 +100,7 @@ class PropHuntGroup {
                     1000);
                 return this;
             } else {
-                return Util.jsonError("invalid passcode", 21);
+                return Util.jsonError("invalid password", 21);
             }
         });
     }
@@ -162,10 +162,10 @@ class PropHuntGroup {
         this.users[id].active = Util.currentTime();
     }
 
-    async setPasscode(passcode) {
-        await Util.hash(passcode).then((result) => {
-            this.passcode = result;
-            return this.passcode;
+    async setPasscode(password) {
+        return await Util.hash(password).then((result) => {
+            this.password = result;
+            return this.password;
         });
     }
 

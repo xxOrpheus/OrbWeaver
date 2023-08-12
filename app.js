@@ -1,12 +1,11 @@
 const express = require('express');
 var Util = require('./Util.js');
+const Config = require('./Config.js');
 var app = express();
 
 var PropHuntServer = require("./PropHuntServer.js");
 var phs = new PropHuntServer();
 const rateLimit = require('express-rate-limit')
-
-
 
 var server = app.listen(8081, function () {
     var host = server.address().address;
@@ -31,8 +30,8 @@ app.use(limiter);
 app.get('/new-group', async function (req, res) {
     var username = req.query.username;
     var world = req.query.world;
-    var passcode = req.query.passcode;
-    await phs.getGroupList().createGroup(username, world, passcode).then((result) => {
+    var password = req.query.password;
+    await phs.getGroupList().createGroup(username, world, password).then((result) => {
         res.end(Util.safeResponse(result));
     });
 
@@ -57,16 +56,15 @@ app.get('/leave-group', function (req, res) {
 
 app.get('/start-game', async function (req, res) {
     var group = phs.getGroupList().getGroup(req.query.group);
-    var start;
-    var passcode = req.query.passcode;
-    if (passcode) {
+    var password = req.query.password;
+    if (password) {
         if (!group.code) {
-            group = await group.startGame(passcode).then((result) => {
+            group = await group.startGame(password).then((result) => {
                 return result;
             });
         }
     } else {
-        group = Util.jsonError("please enter your passcode", 20);
+        group = Util.jsonError("please enter your password", 20);
     }
     res.end(Util.safeResponse(group));
 });

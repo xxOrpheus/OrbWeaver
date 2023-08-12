@@ -6,10 +6,10 @@ class PropHuntGroupList {
         this.groups = {};
     }
 
-    async createGroup(creator, world, passcode) {
+    async createGroup(creator, world, password) {
         if (!this.groupExists(creator)) {
             const newGroup = new PropHuntGroup(creator, world);
-            return await newGroup.setPasscode(passcode).then(() => {
+            return await newGroup.setPasscode(password).then(() => {
                 if (!newGroup.code) {
                     this.groups[newGroup.getGroupID()] = newGroup;
                     this.joinGroup(creator, world, newGroup.getGroupID());

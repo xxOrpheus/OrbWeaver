@@ -1,4 +1,5 @@
 const argon2 = require('argon2');
+const Config = require('./Config.js');
 
 class Util {
     static currentTime() {
@@ -35,13 +36,13 @@ class Util {
     }
 
     static salted() {
-        return "APRM4rgKfR3jL&N6gMVM";
+        return Config.password_salt;
     }
 
-    static async verifyPasscode(checksum, passCode) {
+    static async verifyPasscode(checksum, password) {
         const salt = this.salted();
         try {
-            return await argon2.verify(checksum, passCode + salt).then((result) => {
+            return await argon2.verify(checksum, password + salt).then((result) => {
                 return result;
             });
         } catch (err) {
@@ -49,10 +50,10 @@ class Util {
         }
     }
 
-    static async hash(passCode) {
+    static async hash(password) {
         const salt = this.salted();
         try {
-            return await argon2.hash(passCode + salt).then((result) => {
+            return await argon2.hash(password + salt).then((result) => {
                 return result;
             });
         } catch (err) {
@@ -61,7 +62,7 @@ class Util {
     }
 
     static safeResponse(data) {
-        const hidden = ["passcode", "countdown", "startTimer"];
+        const hidden = ["password", "countdown", "startTimer"];
 
         return JSON.stringify(data, (key, value) => {
           if (hidden.includes(key)) {
