@@ -6,21 +6,8 @@ class PropHuntGroupList {
         this.groups = {};
     }
 
-    async createGroup(creator, world, password) {
-        if (!this.groupExists(creator)) {
-            const newGroup = new PropHuntGroup(creator, world);
-            return await newGroup.setPasscode(password).then(() => {
-                if (!newGroup.code) {
-                    this.groups[newGroup.getGroupID()] = newGroup;
-                    this.joinGroup(creator, world, newGroup.getGroupID());
-                    return this.groups[newGroup.getGroupID()];
-                } else {
-                    return newGroup;
-                }
-            });
-        } else {
-            return Util.jsonError("group exists", 18);
-        }
+    async createGroup(data, client, server) {
+        
     }
 
     joinGroup(username, world, group) {

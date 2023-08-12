@@ -2,19 +2,14 @@ const express = require('express');
 var Util = require('./Util.js');
 const Config = require('./Config.js');
 var app = express();
+const rateLimit = require('express-rate-limit')
 
 var PropHuntServer = require("./PropHuntServer.js");
 var phs = new PropHuntServer();
-const rateLimit = require('express-rate-limit')
 
 var server = app.listen(8081, function () {
     var host = server.address().address;
     var port = server.address().port;
-});
-
-app.use(function (req, res, next) {
-    res.setHeader('Content-Type', 'application/json');
-    next();
 });
 
 const limiter = rateLimit({
@@ -27,61 +22,13 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-app.get('/new-group', async function (req, res) {
-    var username = req.query.username;
-    var world = req.query.world;
-    var password = req.query.password;
-    await phs.getGroupList().createGroup(username, world, password).then((result) => {
-        res.end(Util.safeResponse(result));
-    });
-
+app.use(function (req, res, next) {
+    res.setHeader('Content-Type', 'application/json');
+    next();
 });
 
-app.get('/join-group', function (req, res) {
-    var group = req.query.group;
-    var username = req.query.username;
-    var world = req.query.world;
-    var g = phs.getGroupList().getGroup(group);
-    if (!g.code) {
-        var join = phs.getGroupList().joinGroup(username, world, group);
-        res.end(Util.safeResponse(join));
-    } else {
-        res.end(Util.safeResponse(g));
-    }
+app.get("/", function(req, res) {
+    res.send(Util.safeResponse(
+        phs.getGroupList()
+    ));
 });
-
-app.get('/leave-group', function (req, res) {
-
-});
-
-app.get('/start-game', async function (req, res) {
-    var group = phs.getGroupList().getGroup(req.query.group);
-    var password = req.query.password;
-    if (password) {
-        if (!group.code) {
-            group = await group.startGame(password).then((result) => {
-                return result;
-            });
-        }
-    } else {
-        group = Util.jsonError("please enter your password", 20);
-    }
-    res.end(Util.safeResponse(group));
-});
-
-app.get('/end-game', function (req, res) {
-
-});
-
-app.get('/set-prop', function (req, res) {
-
-});
-
-app.get('/leave-group', function (req, res) {
-
-});
-
-app.get('/found-user', function (req, res) {
-
-});
-

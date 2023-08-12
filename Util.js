@@ -36,7 +36,7 @@ class Util {
     }
 
     static salted() {
-        return Config.password_salt;
+        return Config.PASSWORD_SALT;
     }
 
     static async verifyPasscode(checksum, password) {
@@ -62,7 +62,7 @@ class Util {
     }
 
     static safeResponse(data) {
-        const hidden = ["password", "countdown", "startTimer"];
+        const hidden = ["password", "countdown", "startTimer", "users"];
 
         return JSON.stringify(data, (key, value) => {
           if (hidden.includes(key)) {
