@@ -1,5 +1,5 @@
 var PropHuntGroupList = require("./PropHuntGroupList.js");
-var PropHuntUser = require('./PropHuntUser.js');
+var PropHuntUserList = require('./PropHuntUserList.js');
 
 const dgram = require('dgram');
 const Config = require('./Config.js');
@@ -7,10 +7,11 @@ const Packets = require('./Packets.js');
 
 class PropHuntServer {
     #server;
+    #userList;
     groups;
 
     packetHandlers = {
-        [Packets.Packet.USER_LOGIN]: PropHuntUser.login,
+        [Packets.Packet.USER_LOGIN]: PropHuntUserList.login,
         [Packets.Packet.GROUP_NEW]: PropHuntGroupList.createGroup,
     };
 
@@ -28,6 +29,7 @@ class PropHuntServer {
         this.#server.bind(Config.SERVER_PORT);
 
         this.groups = new PropHuntGroupList();
+        this.#userList = new PropHuntUserList();
     }
 
     #handleMessage(message, remote) {
@@ -43,20 +45,28 @@ class PropHuntServer {
                 this.serverLog("\x1b[31mMalformed packet: Insufficient data length");
                 return;
             }
+            
+            var offset = 0;
 
             const action = message.readUInt8(0);
-
             if (action < 0 || action > Packets.Packet.length) {
                 this.serverLog("\x1b[31mUnsupported packet action: " + Packets.Packets[action]);
                 return;
             }
 
-            let packet = Packets.Packet;
-            
-            if (action == packet.USER_LOGIN) {
-                console.debug(message.toString());
-            }
+            offset += 1;
 
+            console.log(message);
+            console.log(action);
+            console.log(Packets.Packets);
+            console.log(Packets.Packets[action]);
+            if(Packets.Packets[action] != null) {
+                switch(Packets.Packet[action]) {
+                    case Packets.Packets.USER_LOGIN:
+                        this.#userList.login(this, message, offset, remote);
+                        break;
+                }
+            }
         } catch (error) {
             this.serverLog("Error receiving packet");
             console.debug(error);
