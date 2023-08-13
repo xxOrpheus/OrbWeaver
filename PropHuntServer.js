@@ -56,6 +56,8 @@ class PropHuntServer {
 
             offset += 1;
 
+            console.log("handleMessage" + action + " " + message.toString());
+
             if(Packets.Packets[action] != null) {
                 switch(Packets.Packet[action]) {
                     case Packets.Packets.USER_LOGIN:

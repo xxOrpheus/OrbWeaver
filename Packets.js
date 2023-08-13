@@ -26,7 +26,6 @@ Packets.forEach((action, index) => {
 });
 
 utf8Serializer = function(thisValue, message, size, offset, remote) {
-    console.debug(message);
     const sizeBuffer = [];
     for (var i = 0; i < size; i++) {
         sizeBuffer.push(message.readUInt8(offset));

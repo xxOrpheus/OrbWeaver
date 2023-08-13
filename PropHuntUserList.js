@@ -9,6 +9,7 @@ class PropHuntUserList {
     users = {};
 
     async login(thisValue, message, offset, remote) {
+        console.log("login" + message.toString());
         var sizeBuffer = 3; //read jwt, username, password  (utf8)
         var loginDetails = Packets.utf8Serializer(this, message, sizeBuffer, offset, remote);
 
@@ -24,29 +25,34 @@ class PropHuntUserList {
                         this.users[user.id] = user;
                         await this.users[user.id].setPassword(password).then((result) => {
                             this.users[user.id].jwt = jsonwebtoken.sign({ "id": user.id, "username": user.username }, Config.JWT_SECRET_KEY);
-                            thisValue.serverLog(username + " has logged in");
-                            // send their user id
-                            const action = Buffer.alloc(1);
-                            action.writeUInt8(Packets.Packets.USER_GET_ID, 0);
-                    
-                            const userId = Buffer.alloc(2);
-                            userId.writeUInt16BE(user.id);
-                            var packetBuffer = Buffer.concat([action, userId]);
+                            thisValue.serverLog(username + " has logged in " + user.id);
+                            // send their user id and jwt
+                            const actionBuffer = Buffer.alloc(1);
+                            actionBuffer.writeUInt8(Packets.Packet.USER_GET_ID, 0);
+
+                            const jwtBuffer = Buffer.from(this.users[user.id].jwt, 'utf8');
+                            const uidBuffer = Buffer.from(user.id, 'utf8');
+
+                            const sizeBuffer = Buffer.from([jwtBuffer.length, uidBuffer.length]);
+
+                            const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer, uidBuffer]);
+                            console.log("packetBuffer" + packetBuffer.toString());
+
                             thisValue.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
                                 if (err) {
-                                    console.error('Error sending user ID:', err);
+                                    console.error('Error sending response:', err);
                                 }
                             });
                         });
                     } else {
-                        thisValue.serverLog("jwt has already been set");
+                        // thisValue.serverLog("jwt has already been set");
                         // this shouldn't happen
                     }
                 } else { // invalid name
-                    thisValue.serverLog("invalid name");
+                    //   thisValue.serverLog("invalid name");
                 }
             } else {
-                thisValue.serverLog("already logged in");
+                //  thisValue.serverLog("already logged in");
                 //player is logged in already
             }
         }
@@ -54,8 +60,9 @@ class PropHuntUserList {
 
     playerOnline(username) {
         username = username.toLowerCase().trim();
-        for(const u in this.users) {
-            if(this.users[u].name.toLowerCase().trim() == username) {
+        console.log(this.users);
+        for (const u in this.users) {
+            if (this.users[u].username && this.users[u].username.toLowerCase().trim() == username) {
                 return true;
             }
         }
