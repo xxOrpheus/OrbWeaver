@@ -56,14 +56,10 @@ class PropHuntServer {
 
             offset += 1;
 
-            console.log(message);
-            console.log(action);
-            console.log(Packets.Packets);
-            console.log(Packets.Packets[action]);
             if(Packets.Packets[action] != null) {
                 switch(Packets.Packet[action]) {
                     case Packets.Packets.USER_LOGIN:
-                        this.#userList.login(this, message, offset, remote);
+                        this.#userList.login(this, message, 3, offset, remote);
                         break;
                 }
             }
