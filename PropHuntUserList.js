@@ -1,37 +1,16 @@
 const dgram = require('dgram');
 const Config = require('./Config.js');
+var Util = require('./Util.js');
 const Packets = require('./Packets.js');
 
 class PropHuntUserList {
     login(thisValue, message, offset, remote) {
-        const data = [];
-
-        const sizeBuffer = [];
-        for (var i = 0; i < 3; i++) {
-            sizeBuffer.push(message.readUInt8(offset));
-            offset += 1;
-        }
-    
-        const details = [];
-        for (const length of sizeBuffer) {
-            const utf8String = message.toString('utf-8', offset, offset + length);
-            details.push(utf8String);
-            offset += length;
-        }
-    
-        const worldNumber = message.readUInt16BE(offset);
-        details[3] = worldNumber;
-
-    
-        if(details.length > 3) {
-            let jwtToken = details[0];
-            let username = details[1];
-            let password = details[2];
-            let worldNumber = details[3];
-
-            // woo
-        }
-
+        var details = Packets.utf8Serializer(this, message, 3, offset, remote);
+        var jwt = details.data[0];
+        var username = details.data[1];
+        var password = details.data[2];
+        var worldNumber = message.readUInt16BE(details.offset);
+        console.log(username, password, worldNumber, jwt);
     }
 }
 
