@@ -4,23 +4,16 @@ const Packets = require('./Packets.js');
 
 class PropHuntUserList {
     login(thisValue, message, offset, remote) {
-        console.log("login " + JSON.stringify(message));
-
         const data = [];
 
-        
         const sizeBuffer = [];
-
-        const utf8StringLengths = [];
         for (var i = 0; i < 3; i++) {
-            utf8StringLengths.push(message.readUInt8(offset));
+            sizeBuffer.push(message.readUInt8(offset));
             offset += 1;
         }
-        console.log(offset);
-        console.log(utf8StringLengths);
     
         const details = [];
-        for (const length of utf8StringLengths) {
+        for (const length of sizeBuffer) {
             const utf8String = message.toString('utf-8', offset, offset + length);
             details.push(utf8String);
             offset += length;
