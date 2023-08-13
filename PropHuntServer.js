@@ -59,7 +59,7 @@ class PropHuntServer {
             if(Packets.Packets[action] != null) {
                 switch(Packets.Packet[action]) {
                     case Packets.Packets.USER_LOGIN:
-                        this.#userList.login(this, message, 3, offset, remote);
+                        this.#userList.login(this, message, offset, remote);
                         break;
                 }
             }

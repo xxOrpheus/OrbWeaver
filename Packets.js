@@ -5,6 +5,7 @@ const Packet = {};
 
 const Packets = [ // order is protocol sensitive but that's ok , just share this list with the client.
     "USER_LOGIN",
+    "USER_GET_ID",
     "USER_LOGOUT",
 
     "GROUP_NEW",

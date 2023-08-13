@@ -13,7 +13,6 @@ const packet = Packets.Packets;
 
 const packetAction = packet.USER_LOGIN;
 
-const messageBuffer = Buffer.alloc(1);
 // Create the JWT
 const jwtToken = "false";
 const username = "davesnothere";
