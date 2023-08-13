@@ -25,6 +25,18 @@ class PropHuntUserList {
                         await this.users[user.id].setPassword(password).then((result) => {
                             this.users[user.id].jwt = jsonwebtoken.sign({ "id": user.id, "username": user.username }, Config.JWT_SECRET_KEY);
                             thisValue.serverLog(username + " has logged in");
+                            // send their user id
+                            const action = Buffer.alloc(1);
+                            action.writeUInt8(Packets.Packets.USER_GET_ID, 0);
+                    
+                            const userId = Buffer.alloc(2);
+                            userId.writeUInt16BE(user.id);
+                            var packetBuffer = Buffer.concat([action, userId]);
+                            thisValue.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
+                                if (err) {
+                                    console.error('Error sending user ID:', err);
+                                }
+                            });
                         });
                     } else {
                         thisValue.serverLog("jwt has already been set");

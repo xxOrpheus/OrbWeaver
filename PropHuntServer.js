@@ -6,7 +6,7 @@ const Config = require('./Config.js');
 const Packets = require('./Packets.js');
 
 class PropHuntServer {
-    #server;
+    server;
     #userList;
     groups;
 
@@ -16,17 +16,17 @@ class PropHuntServer {
     };
 
     constructor() {
-        this.#server = dgram.createSocket("udp4");
+        this.server = dgram.createSocket("udp4");
 
-        this.#server.on("error", (error) => { this.#handleError(error) });
+        this.server.on("error", (error) => { this.#handleError(error) });
 
-        this.#server.on("message", (message, remote) => { this.#handleMessage(message, remote) });
+        this.server.on("message", (message, remote) => { this.#handleMessage(message, remote) });
 
-        this.#server.on("listening", () => {
+        this.server.on("listening", () => {
             this.serverLog("Prop hunt server started");
         });
 
-        this.#server.bind(Config.SERVER_PORT);
+        this.server.bind(Config.SERVER_PORT);
 
         this.groups = new PropHuntGroupList();
         this.#userList = new PropHuntUserList();
@@ -74,7 +74,7 @@ class PropHuntServer {
     }
 
     serverLog(message) {
-        const address = this.#server.address();
+        const address = this.server.address();
         console.log("[\x1b[34m" + address.address + "\x1b[39m:\x1b[37m" + address.port + "\x1b[39m]: \x1b[32m" + message + "\x1b[39m");
     }
 

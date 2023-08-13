@@ -56,21 +56,6 @@ class PropHuntGroup {
             return !validName ? Util.jsonError("invalid username", 10) : Util.jsonError("already in game", 15);
         }
         */
-
-        const action = Buffer.alloc(1);
-        action.writeUInt8(Packets.Packets.USER_GET_ID, 0);
-
-        const userId = Buffer.alloc(2);
-        userIdData.writeUInt16BE(userId);
-
-
-
-        // Send the user ID back to the client
-        socket.send(userIdData, 0, userIdData.length, remote.port, remote.address, (err) => {
-            if (err) {
-                console.error('Error sending user ID:', err);
-            }
-        });
     }
 
     removeUser(id) {
