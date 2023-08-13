@@ -58,7 +58,7 @@ worldBuffer.writeUInt16BE(world, 0);
 const sizeBuffer = Buffer.from([jwtBuffer.length, usernameBuffer.length, passwordBuffer.length]);
 
 const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer, usernameBuffer, passwordBuffer, worldBuffer]);
-
+var userId, jwt;
 
 client.send(packetBuffer, 0, packetBuffer.length, serverPort, serverAddress, (err) => {
     if (err) {
@@ -82,5 +82,8 @@ client.on("message", function (message, remote) {
         data = Packets.utf8Serializer(this, message, size, offset, remote);
         offset = data.offset;
         var userDetails = data.data;
+        jwt = userDetails[0];
+        userId = userDetails[1];
+        console.log(userDetails);
     }
 });

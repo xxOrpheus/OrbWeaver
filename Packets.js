@@ -7,6 +7,7 @@ const Packets = [ // order is protocol sensitive but that's ok , just share this
     "USER_LOGIN",
     "USER_GET_ID",
     "USER_LOGOUT",
+    "ALREADY_LOGGED_IN",
 
     "GROUP_NEW",
     "GROUP_JOIN",

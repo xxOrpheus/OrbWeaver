@@ -84,7 +84,6 @@ class PropHuntGroup {
     async startGame(password) {
         return await Util.verifyPasscode(this.password, password).then((result) => {
             if (result) {
-                console.debug("verify" + result);
                 this.setupTeams();
                 this.gameLog("Teams selected, let the countdown begin (" + this.startTimer + "s)");
                 var groupCountdown = function () {

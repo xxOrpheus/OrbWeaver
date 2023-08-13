@@ -9,7 +9,6 @@ class PropHuntUserList {
     users = {};
 
     async login(thisValue, message, offset, remote) {
-        console.log("login" + message.toString());
         var sizeBuffer = 3; //read jwt, username, password  (utf8)
         var loginDetails = Packets.utf8Serializer(this, message, sizeBuffer, offset, remote);
 
@@ -35,8 +34,7 @@ class PropHuntUserList {
 
                             const sizeBuffer = Buffer.from([jwtBuffer.length, uidBuffer.length]);
 
-                            const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer, uidBuffer]);
-                            console.log("packetBuffer" + packetBuffer.toString());
+                            const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer, uidBuffer]);;
 
                             thisValue.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
                                 if (err) {
@@ -45,14 +43,14 @@ class PropHuntUserList {
                             });
                         });
                     } else {
-                        // thisValue.serverLog("jwt has already been set");
+                        thisValue.serverLog("jwt has already been set");
                         // this shouldn't happen
                     }
                 } else { // invalid name
-                    //   thisValue.serverLog("invalid name");
+                    thisValue.serverLog("invalid name");
                 }
             } else {
-                //  thisValue.serverLog("already logged in");
+                thisValue.serverLog("already logged in");
                 //player is logged in already
             }
         }
@@ -60,7 +58,6 @@ class PropHuntUserList {
 
     playerOnline(username) {
         username = username.toLowerCase().trim();
-        console.log(this.users);
         for (const u in this.users) {
             if (this.users[u].username && this.users[u].username.toLowerCase().trim() == username) {
                 return true;
