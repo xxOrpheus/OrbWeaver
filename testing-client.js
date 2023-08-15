@@ -1,89 +1,112 @@
-const dgram = require('dgram');
-const Config = require('./Config.js');
-const client = dgram.createSocket('udp4');
+/*
+ *
+ * For testing purposes, to be converted to Java for use in the RuneLite plugin later.
+ *
+ */
+
+const dgram = require("dgram");
+const Config = require("./Config.js");
+const client = dgram.createSocket("udp4");
 
 const serverPort = Config.SERVER_PORT;
 const clientPort = serverPort + 1;
 
-const serverAddress = '127.0.0.1';
+const serverAddress = "127.0.0.1";
 
-const Packets = require('./Packets.js');
+const Packets = require("./Packets.js");
+const Errors = require("./Errors.js");
 
-const packet = Packets.Packets;
+// BEGIN USER_LOGIN
 
-const packetAction = packet.USER_LOGIN;
+// END USER_LOGIN
 
-// Create the JWT
-const jwtToken = "false";
+function login(username, password, world) {
+	let jwtToken = "false"; // false = not logged in
 
-function generateRandomString(length) {
-    const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ';
-    let randomString = '';
+	let actionBuffer = Buffer.alloc(1);
+	actionBuffer.writeUInt8(Packets.Packet.USER_LOGIN, 0);
 
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        randomString += characters.charAt(randomIndex);
-    }
+	let jwtBuffer = Buffer.from(jwtToken, "utf8");
+	let usernameBuffer = Buffer.from(username, "utf8");
+	let passwordBuffer = Buffer.from(password, "utf8");
 
-    // Ensure the string doesn't start with a space
-    if (randomString.charAt(0) === ' ') {
-        randomString = randomString.substring(1);
-    }
+	let worldBuffer = Buffer.alloc(2);
+	worldBuffer.writeUInt16BE(world, 0);
 
-    // Ensure the string doesn't end with a space
-    if (randomString.charAt(randomString.length - 1) === ' ') {
-        randomString = randomString.substring(0, randomString.length - 1);
-    }
+	let sizeBuffer = Buffer.from([
+		jwtBuffer.length,
+		usernameBuffer.length,
+		passwordBuffer.length,
+	]);
+	let packetBuffer = Buffer.concat([
+		actionBuffer,
+		sizeBuffer,
+		jwtBuffer,
+		usernameBuffer,
+		passwordBuffer,
+		worldBuffer,
+	]);
 
-    return randomString;
+	sendPacket(packetBuffer);
 }
 
-const randomStringLength = Math.floor(Math.random() * 12) + 4; // Minimum length of 4, maximum of 15 after removing leading or trailing space
-//const username = generateRandomString(randomStringLength);
-const username = "davesnothere";
-const password = "fuck";
-const world = 420;
+login("davesnothere", "fuc", 420);
 
-// Construct the packet
-const actionBuffer = Buffer.alloc(1);
-actionBuffer.writeUInt8(packetAction, 0);
-
-const jwtBuffer = Buffer.from(jwtToken, 'utf8');
-const usernameBuffer = Buffer.from(username, 'utf8');
-const passwordBuffer = Buffer.from(password, 'utf8');
-
-const worldBuffer = Buffer.alloc(2);
-worldBuffer.writeUInt16BE(world, 0);
-
-const sizeBuffer = Buffer.from([jwtBuffer.length, usernameBuffer.length, passwordBuffer.length]);
-
-const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer, usernameBuffer, passwordBuffer, worldBuffer]);
 var userId, jwt;
-
-client.send(packetBuffer, 0, packetBuffer.length, serverPort, serverAddress, (err) => {
-    if (err) {
-        console.error('Error sending packet:', err);
-    } else {
-        console.log('Packet sent successfully!');
-    }
-});
-
 client.on("message", function (message, remote) {
-    //console.log("recv msg" + message.toString());
-    var offset = 0;
-    const action = message.readUInt8(0);
-    if (action < 0 || action > Packets.Packet.length) {
-        this.serverLog("\x1b[31mUnsupported packet action: " + Packets.Packets[action]);
-        return;
-    }
-    offset++;
-    if (action == Packets.Packet.USER_GET_ID) {
-        var size = 2;
-        data = Packets.utf8Serializer(this, message, size, offset, remote);
-        offset = data.offset;
-        var userDetails = data.data;
-        jwt = userDetails[0];
-        userId = userDetails[1];
-        console.log(userDetails);
+	var offset = 0;
+	const action = message.readUInt8(0);
+	if (action < 0 || action > Packets.Packet.length) {
+		this.serverLog(
+			"\x1b[31mUnsupported packet action: " + Packets.Packets[action]
+		);
+		return;
+	}
+	offset++;
+    console.log("Action: " + action);
+	if (action == Packets.Packet.USER_GET_ID) {
+		// received upon login
+		var size = 2;
+		data = Packets.utf8Serializer(message, size, offset, remote);
+		offset = data.offset;
+		var userDetails = data.data;
+        
+		jwt = userDetails[0];
+		userId = userDetails[1];
+        console.log("log:"+userId);
+		createGroup(jwt, userId);
+	} else if(action == Packets.Packet.ERROR_MESSAGE) {
+        data = message.readUint16BE(1);
+        if(Errors.Errors[data]) {
+            console.log("ERROR RECV: " + Errors.Errors[data]);
+        }
     }
 });
+
+function createGroup(jwt, userId) {
+	let actionBuffer = Buffer.alloc(1);
+	actionBuffer.writeUInt8(Packets.Packet.GROUP_NEW, 0);
+
+	let jwtBuffer = Buffer.from(jwt, "utf8");
+	let userIdBuffer = Buffer.from(userId, "utf8");
+
+	let sizeBuffer = Buffer.from([jwtBuffer.length, userIdBuffer.length]);
+	let packetBuffer = Buffer.concat([
+		actionBuffer,
+		sizeBuffer,
+		jwtBuffer,
+		userIdBuffer,
+	]);
+    console.log("createGroup" + packetBuffer.toString());
+	sendPacket(packetBuffer);
+}
+
+function sendPacket(buffer) {
+	client.send(buffer, 0, buffer.length, serverPort, serverAddress, (err) => {
+		if (err) {
+			console.error("Error sending packet:", err);
+		} else {
+			console.log("Packet sent successfully!");
+		}
+	});
+}

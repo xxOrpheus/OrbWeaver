@@ -1,86 +1,138 @@
 var PropHuntGroupList = require("./PropHuntGroupList.js");
-var PropHuntUserList = require('./PropHuntUserList.js');
+var PropHuntUserList = require("./PropHuntUserList.js");
 
-const dgram = require('dgram');
-const Config = require('./Config.js');
-const Packets = require('./Packets.js');
+const dgram = require("dgram");
+const Config = require("./Config.js");
+const Packets = require("./Packets.js");
+const Errors = require("./Errors.js");
+
+const JWT = require("jsonwebtoken");
 
 class PropHuntServer {
-    server;
-    #userList;
-    groups;
+	#server;
+	#users;
+	#groups;
 
-    packetHandlers = {
-        [Packets.Packet.USER_LOGIN]: PropHuntUserList.login,
-        [Packets.Packet.GROUP_NEW]: PropHuntGroupList.createGroup,
-    };
+	constructor() {
+		this.server = dgram.createSocket("udp4");
 
-    constructor() {
-        this.server = dgram.createSocket("udp4");
+		this.server.on("error", (error) => {
+			this.#handleError(error);
+		});
 
-        this.server.on("error", (error) => { this.#handleError(error) });
+		this.server.on("message", (message, remote) => {
+			this.#handleMessage(message, remote);
+		});
 
-        this.server.on("message", (message, remote) => { this.#handleMessage(message, remote) });
+		this.server.on("listening", () => {
+			this.serverLog("Prop hunt server started");
+		});
 
-        this.server.on("listening", () => {
-            this.serverLog("Prop hunt server started");
-        });
+		this.server.bind(Config.SERVER_PORT);
 
-        this.server.bind(Config.SERVER_PORT);
+		this.groups = new PropHuntGroupList();
+		this.users = new PropHuntUserList();
+	}
 
-        this.groups = new PropHuntGroupList();
-        this.#userList = new PropHuntUserList();
-    }
+	#handleMessage(message, remote) {
+		try {
+			if (message.length < 3) {
+				this.serverLog("\x1b[31mMalformed packet: Insufficient data length");
+				return;
+			}
 
-    #handleMessage(message, remote) {
-        try {
-            let rIP = remote.address;
-            let rPort = remote.port;
+			var offset = 0;
 
-            /* function clientLog(message) {
-                 this.serverLog("\x1b[33m" + rIP + ":" + rPort + " " + message + "\x1b[39");
-             }*/
+			const action = message.readUInt8(0);
+			if (action < 0 || action > Packets.Packet.length) {
+				this.serverLog("\x1b[31mUnsupported packet action: " + Packets.Packets[action]);
+				return;
+			}
 
-            if (message.length < 3) {
-                this.serverLog("\x1b[31mMalformed packet: Insufficient data length");
-                return;
-            }
-            
-            var offset = 0;
+			offset++;
 
-            const action = message.readUInt8(0);
-            if (action < 0 || action > Packets.Packet.length) {
-                this.serverLog("\x1b[31mUnsupported packet action: " + Packets.Packets[action]);
-                return;
-            }
+			if (Packets.Packets[action] != null) {
+				switch (action) {
+					case Packets.Packet.USER_LOGIN:
+						this.users.login(this, message, offset, remote);
+						break;
 
-            offset += 1;
+					case Packets.Packet.GROUP_NEW:
+						this.groups.createGroup(this, message, offset, remote);
+						break;
 
-            if(Packets.Packets[action] != null) {
-                switch(Packets.Packet[action]) {
-                    case Packets.Packets.USER_LOGIN:
-                        this.#userList.login(this, message, offset, remote);
-                        break;
-                }
-            }
-        } catch (error) {
-            this.serverLog("Error receiving packet");
-            console.debug(error);
-        }
-    }
+					case Packets.Packet.GROUP_JOIN:
+						this.groups.joinGroup(this, message, offset, remote);
+						break;
+				}
+			}
+		} catch (error) {
+			this.serverLog("Error receiving packet");
+			console.debug(error);
 
-    #handleError(error) { // i can fix her
-        console.debug(error);
-    }
+			// this.handleError ?
+		}
+	}
 
-    serverLog(message) {
-        const address = this.server.address();
-        console.log("[\x1b[34m" + address.address + "\x1b[39m:\x1b[37m" + address.port + "\x1b[39m]: \x1b[32m" + message + "\x1b[39m");
-    }
+	sendError(error, remote) {
+		if (remote && remote.address && remote.port) {
+			let action = Buffer.alloc(1);
+			action.writeUInt8(Packets.Packet.ERROR_MESSAGE);
+			let msg = Buffer.alloc(2);
+			msg.writeUInt16BE(error);
+			let buffer = Buffer.concat([action, msg]);
 
-    getGroupList() {
-        return this.groups;
-    }
+			return this.server.send(buffer, 0, buffer.length, remote.port, remote.address, (err) => {
+				if (err) {
+					console.error("Error sending response:", err);
+				}
+			});
+		} else {
+			return false;
+		}
+	}
+
+	#handleError(error) {
+		// i can fix her
+		console.debug(error);
+	}
+
+	serverLog(message) {
+		const address = this.server.address();
+		console.log("[\x1b[34m" + address.address + "\x1b[39m:\x1b[37m" + address.port + "\x1b[39m]: \x1b[32m" + message + "\x1b[39m");
+	}
+
+	getGroups() {
+		return this.groups;
+	}
+
+	getUsers() {
+		return this.users;
+	}
+
+	verifyUser(userId, jwt) {
+		// we need to make sure the ID they're sending is actually them first
+		if (this.users[userId] && this.users[userId].jwt != jwt) {
+			return false;
+		}
+		return this.verifyJWT(jwt);
+	}
+
+	getJWT() {
+		return JWT;
+	}
+
+	verifyJWT(jwt) {
+		try {
+			return this.getJWT().verify(jwt, Config.JWT_SECRET_KEY);
+		} catch (error) {
+			if (error.message === "jwt malformed") {
+				return false;
+			}
+			console.error(error);
+			return false;
+		}
+	}
 }
 
 module.exports = PropHuntServer;
