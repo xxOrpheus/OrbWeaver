@@ -111,11 +111,10 @@ class PropHuntServer {
 	}
 
 	verifyUser(userId, jwt) {
-		// we need to make sure the ID they're sending is actually them first
-		if (this.users[userId] && this.users[userId].jwt != jwt) {
-			return false;
-		}
-		return this.verifyJWT(jwt);
+        jwt = this.verifyJWT(jwt);
+        if(jwt.id == userId) {
+            return true;
+        }
 	}
 
 	getJWT() {

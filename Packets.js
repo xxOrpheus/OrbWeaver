@@ -13,7 +13,7 @@ const Packets = [
 	"USER_LOGOUT", // TODO: Logout
 
 	"GROUP_NEW",
-	"GROUP_JOIN", // TODO: Join a group
+	"GROUP_JOIN",
 	"GROUP_START_GAME", // TODO: Start the game
 	"GROUP_END_GAME", // TODO: End the game
 	"GROUP_SET_STAGE", // TODO: Set the play area

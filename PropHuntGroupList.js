@@ -13,48 +13,48 @@ class PropHuntGroupList {
 	}
 
 	createGroup(server, message, offset, remote) {
-		var sizeBuffer = 2; //read jwt, userId
+		var sizeBuffer = 1; //read jwt
 		var groupDetails = Packets.utf8Serializer(message, sizeBuffer, offset, remote);
 		offset = groupDetails.offset;
 
 		if (groupDetails.data.length >= sizeBuffer) {
 			var jwt = groupDetails.data[0];
-			var userId = groupDetails.data[1];
 			let users = server.getUsers();
-			if (users.users[userId] != null && server.verifyUser(userId, jwt)) {
-				let world = users.users[userId].world;
-				if (Util.isValidWorld(world)) {
-					if (!this.groups[userId]) {
-						this.groups[userId] = new PropHuntGroup(userId, world);
-                        // add the creator to the list of users -- group ID is synonymous with the user ID
-						this.addUser(userId, userId);
-                        console.log(this.groups[userId]);
-					} else {
-						// TODO: Send already in group packet
-						server.sendError(Errors.Error.ALREADY_IN_GROUP);
-					}
-				} else {
-					// TODO: Send invalid world packet
-					server.sendError(Errors.Error.INVALID_WORLD);
-				}
-			} else {
-				// TODO: Send invalid login packet
-				server.sendError(Errors.Error.INVALID_LOGIN);
-			}
+            let verify = server.verifyJWT(jwt);
+            if(verify.id) {
+                var userId = verify.id;
+                if (users.users[userId] != null) {
+                    let world = users.users[userId].world;
+                    if (Util.isValidWorld(world)) {
+                        if (!this.groups[userId]) {
+                            this.groups[userId] = new PropHuntGroup(userId, world);
+                            // add the creator to the list of users -- group ID is synonymous with the user ID
+                            this.addUser(userId, userId);
+                            server.serverLog(users.users[userId].username + " has created a group (" + userId + ")");
+                        } else {
+                            server.sendError(Errors.Error.ALREADY_IN_GROUP);
+                        }
+                    } else {
+                        server.sendError(Errors.Error.INVALID_WORLD);
+                    }
+                } else {
+                    server.sendError(Errors.Error.INVALID_LOGIN);
+                }
+            }
 		}
 	}
 
     joinGroup(server, message, offset, remote) {
-		var sizeBuffer = 3; //read jwt, userId, groupId
+		var sizeBuffer = 2; //read jwt, userId, groupId
 		var groupDetails = Packets.utf8Serializer(message, sizeBuffer, offset, remote);
 		offset = groupDetails.offset;
 
 		if (groupDetails.data.length >= sizeBuffer) {
 			var jwt = groupDetails.data[0];
-			var userId = groupDetails.data[1];
-            var groupId = groupDetails.data[2];
-            if(server.verifyJWT(userId, jwt)) {
-                
+            var verify = server.verifyJWT(jwt);
+            if(verify.id) {
+                var groupId = groupDetails.data[1];
+                var userId = jwt.id;
                 this.addUser(groupId, userId);
             }
         }

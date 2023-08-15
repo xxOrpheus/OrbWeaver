@@ -15,8 +15,8 @@ class PropHuntUserList {
 		offset = loginDetails.offset;
 
 		if (loginDetails.data.length >= sizeBuffer) {
-			var jwt = loginDetails.data[0].toLowerCase().trim();
-			var username = loginDetails.data[1];
+			var jwt = loginDetails.data[0];
+			var username = loginDetails.data[1].toLowerCase().trim();
 			// do not try to login if they're already logged in
 			if (!this.playerOnline(username)) {
 				// make sure it is a valid name first
@@ -32,16 +32,12 @@ class PropHuntUserList {
 							await this.users[user.id].setPassword(password).then((result) => {
 								this.users[user.id].jwt = server.getJWT().sign({ id: user.id, username: user.username }, Config.JWT_SECRET_KEY);
 								server.serverLog(username + " has logged in " + user.id);
-								// send their user id and jwt
+								// send their JWT
 								const actionBuffer = Buffer.alloc(1);
 								actionBuffer.writeUInt8(Packets.Packet.USER_GET_ID, 0);
-
 								const jwtBuffer = Buffer.from(this.users[user.id].jwt, "utf8");
-								const uidBuffer = Buffer.from(user.id, "utf8");
-
-								const sizeBuffer = Buffer.from([jwtBuffer.length, uidBuffer.length]);
-
-								const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer, uidBuffer]);
+								const sizeBuffer = Buffer.from([jwtBuffer.length]);
+								const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer]);
 
 								server.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
 									if (err) {
@@ -67,7 +63,7 @@ class PropHuntUserList {
 	playerOnline(username) {
 		username = username.toLowerCase().trim();
 		for (const u in this.users) {
-			if (this.users[u].username && this.users[u].username.toLowerCase().trim() == username) {
+			if (this.users[u].username && this.users[u].username == username) {
 				return true;
 			}
 		}
