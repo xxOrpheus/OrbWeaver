@@ -9,11 +9,13 @@ const Packets = [
 	// order is protocol sensitive but that's ok , just share this list with the client.
 
 	"USER_LOGIN",
-	"USER_GET_ID",
+	"USER_GET_JWT",
 	"USER_LOGOUT", // TODO: Logout
 
 	"GROUP_NEW",
 	"GROUP_JOIN",
+  "GROUP_USERS",
+  "GROUP_INFO",
 	"GROUP_START_GAME", // TODO: Start the game
 	"GROUP_END_GAME", // TODO: End the game
 	"GROUP_SET_STAGE", // TODO: Set the play area
@@ -49,17 +51,14 @@ utf8Serializer = function (message, size, offset, remote) {
 
 utf8Serialize = function (buffer) {
 	let packet = [],
-		sizeBuffer = [],
-		i = 0;
-
+		sizeBuffer = [];
 	for (const data in buffer) {
-		let buf = Buffer.from(data, "utf-8");
-		packet[i] = buf;
-		sizeBuffer[i] = buf.length;
-		i++;
+		let buf = Buffer.from(data, "utf8");
+		packet.push(buf);
+		sizeBuffer.push(buf.length);
 	}
 	sizeBuffer = Buffer.from(sizeBuffer);
-	return { data: buf, size: sizeBuffer };
+	return { data: packet, size: sizeBuffer };
 };
 
 module.exports = { Packets, Packet, utf8Serializer, utf8Serialize };

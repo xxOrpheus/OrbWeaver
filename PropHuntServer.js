@@ -8,7 +8,7 @@ const Errors = require("./Errors.js");
 
 const JWT = require("jsonwebtoken");
 
-class PropHuntServer {
+class PropHuntServer { // TODO: Implement AES encryption or some other standard
 	packetTimes = new Map();
 
 	#server;
@@ -38,24 +38,6 @@ class PropHuntServer {
 
 	#handleMessage(message, remote) {
 		try {
-			const now = Date.now();
-
-			this.packetTimes.forEach((timestamp, address) => {
-				if (now - timestamp > Config.TICK_LENGTH) {
-					this.packetTimes.delete(address);
-				}
-			});
-
-			if (!this.packetTimes.has(remote.address)) {
-				this.packetTimes.set(remote.address, now);
-			} else {
-				if (now - this.packetTimes.get(remote.address) <= Config.TICK_LENGTH) {
-					this.serverLog("\x1b[31m" + remote.address + " is going too fast!\x1b[0m");
-					return;
-				}
-				this.packetTimes.set(remote.address, now);
-			}
-
 			if (message.length < 3) {
 				this.serverLog("\x1b[31mMalformed packet: Insufficient data length");
 				return;
@@ -103,6 +85,21 @@ class PropHuntServer {
 		}
 	}
 
+    createPacket(packet) {
+        let actionBuffer = Buffer.alloc(1);
+        actionBuffer.writeUInt8(packet, 0);
+        return [actionBuffer];
+    }
+
+	sendPacket(packet, remote) {
+		packet = Buffer.concat(packet);
+		this.server.send(packet, 0, packet.length, remote.port, remote.address, (err) => {
+			if (err) {
+				console.error("Error sending packet:", err);
+			}
+		});
+	}
+
 	sendError(error, remote) {
 		if (remote && remote.address && remote.port) {
 			let action = Buffer.alloc(1);
@@ -116,6 +113,7 @@ class PropHuntServer {
 					console.error("Error sending response:", err);
 				}
 			});
+            this.sendPacket(buffer, remote);
 		} else {
 			return false;
 		}
@@ -137,13 +135,6 @@ class PropHuntServer {
 
 	getUsers() {
 		return this.users;
-	}
-
-	verifyUser(userId, jwt) {
-		jwt = this.verifyJWT(jwt);
-		if (jwt.id == userId) {
-			return true;
-		}
 	}
 
 	getJWT() {

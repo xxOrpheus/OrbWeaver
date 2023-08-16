@@ -34,7 +34,7 @@ class PropHuntUserList {
 									server.serverLog(username + " has logged in " + user.id);
 									// send their JWT
 									const actionBuffer = Buffer.alloc(1);
-									actionBuffer.writeUInt8(Packets.Packet.USER_GET_ID, 0);
+									actionBuffer.writeUInt8(Packets.Packet.USER_GET_JWT, 0);
 									const jwtBuffer = Buffer.from(this.users[user.id].jwt, "utf8");
 									const sizeBuffer = Buffer.from([jwtBuffer.length]);
 									const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer]);

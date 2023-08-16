@@ -7,6 +7,7 @@ class PropHuntUser {
 		this.username = username;
 		this.active = Util.currentTime();
 		this.id = uuidv4();
+        this.groupId = "";
 		this.world = worldNumber;
 		this.jwt = false;
 		return this;
