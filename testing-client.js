@@ -15,6 +15,7 @@ const serverAddress = "127.0.0.1";
 
 const Packets = require("./Packets.js");
 const Errors = require("./Errors.js");
+const { group } = require("console");
 
 // BEGIN USER_LOGIN
 
@@ -33,33 +34,20 @@ function login(username, password, world) {
 	let worldBuffer = Buffer.alloc(2);
 	worldBuffer.writeUInt16BE(world, 0);
 
-	let sizeBuffer = Buffer.from([
-		jwtBuffer.length,
-		usernameBuffer.length,
-		passwordBuffer.length,
-	]);
-	let packetBuffer = Buffer.concat([
-		actionBuffer,
-		sizeBuffer,
-		jwtBuffer,
-		usernameBuffer,
-		passwordBuffer,
-		worldBuffer,
-	]);
+	let sizeBuffer = Buffer.from([jwtBuffer.length, usernameBuffer.length, passwordBuffer.length]);
+	let packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer, usernameBuffer, passwordBuffer, worldBuffer]);
 
 	sendPacket(packetBuffer);
 }
 
-login("davesnothere", "fuc", 420);
+login("davesnaothere", "fuc", 420);
 
 var userId, jwt;
 client.on("message", function (message, remote) {
 	var offset = 0;
 	const action = message.readUInt8(0);
 	if (action < 0 || action > Packets.Packet.length) {
-		this.serverLog(
-			"\x1b[31mUnsupported packet action: " + Packets.Packets[action]
-		);
+		this.serverLog("\x1b[31mUnsupported packet action: " + Packets.Packets[action]);
 		return;
 	}
 	offset++;
@@ -69,29 +57,43 @@ client.on("message", function (message, remote) {
 		data = Packets.utf8Serializer(message, size, offset, remote);
 		offset = data.offset;
 		var userDetails = data.data;
-        
+
 		jwt = userDetails[0];
-		createGroup(jwt);
-	} else if(action == Packets.Packet.ERROR_MESSAGE) {
-        data = message.readUint16BE(1);
-        if(Errors.Errors[data]) {
-            console.log("ERROR RECV: " + Errors.Errors[data]);
-        }
-    }
+	//	createGroup(jwt);
+        joinGroup(jwt, "c2249ada-ae21-4437-97e4-508d33697bfe");
+	} else if (action == Packets.Packet.ERROR_MESSAGE) {
+		data = message.readUint16BE(1);
+		if (Errors.Errors[data]) {
+			console.log("ERROR RECV: " + Errors.Errors[data]);
+		}
+	}
 });
 
 function createGroup(jwt) {
-	let actionBuffer = Buffer.alloc(1);
-	actionBuffer.writeUInt8(Packets.Packet.GROUP_NEW, 0);
-	let jwtBuffer = Buffer.from(jwt, "utf8");
+   let packet = createPacket(Packets.Packet.GROUP_NEW, jwt);
+   sendPacket(Buffer.concat(packet));
+}
 
-	let sizeBuffer = Buffer.from([jwtBuffer.length]);
-	let packetBuffer = Buffer.concat([
-		actionBuffer,
-		sizeBuffer,
-		jwtBuffer
-	]);
+function joinGroup(jwt, groupId) {
+	let actionBuffer = Buffer.alloc(1);
+	actionBuffer.writeUInt8(Packets.Packet.GROUP_JOIN, 0);
+	let jwtBuffer = Buffer.from(jwt, "utf8");
+	let groupBuffer = Buffer.from(groupId, "utf8");
+	let sizeBuffer = Buffer.from([jwtBuffer.length, groupBuffer.length]);
+
+	let packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer, groupBuffer]);
+
 	sendPacket(packetBuffer);
+}
+
+
+// TODO: make a packet "packer" 
+function createPacket(packet, token) {
+	let actionBuffer = Buffer.alloc(1);
+	actionBuffer.writeUInt8(packet, 0);
+	let jwtBuffer = Buffer.from(token, "utf8");
+	let tokenSize = Buffer.from([jwtBuffer.length]);
+	return [actionBuffer, tokenSize, jwtBuffer];
 }
 
 function sendPacket(buffer) {

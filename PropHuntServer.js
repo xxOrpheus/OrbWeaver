@@ -51,6 +51,8 @@ class PropHuntServer {
 
 			offset++;
 
+            // TODO: JWT should always be received here and passed to the rest of the functions as needed
+
 			if (Packets.Packets[action] != null) {
 				switch (action) {
 					case Packets.Packet.USER_LOGIN:

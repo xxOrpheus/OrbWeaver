@@ -45,17 +45,36 @@ class PropHuntGroupList {
 	}
 
     joinGroup(server, message, offset, remote) {
-		var sizeBuffer = 2; //read jwt, userId, groupId
+		var sizeBuffer = 2 //read jwt, groupId
 		var groupDetails = Packets.utf8Serializer(message, sizeBuffer, offset, remote);
-		offset = groupDetails.offset;
-
+		offset = groupDetails.offset;  
+        
+        console.log("joining group: ");
 		if (groupDetails.data.length >= sizeBuffer) {
-			var jwt = groupDetails.data[0];
+            var jwt = groupDetails.data[0];
+            var groupId = groupDetails.data[1];
             var verify = server.verifyJWT(jwt);
             if(verify.id) {
-                var groupId = groupDetails.data[1];
-                var userId = jwt.id;
-                this.addUser(groupId, userId);
+                var user = server.getUsers().users[verify.id];
+                if(user) {
+                    if(this.groups[groupId]) {
+                        if(!this.groups[groupId].users[verify.id]) {
+                            var userId = jwt.id;
+                            console.log(user.username + " joined group " + groupId);
+                            this.addUser(groupId, userId);
+                        } else {
+                            // the user is already in the group
+                            server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
+                        }
+                    } else {
+                        console.debug("tried joining invalid group " + groupId);
+                        server.sendError(Errors.Error.INVALID_GROUP, remote);
+                    }
+                } else {
+                    server.sendError(Errors.Error.INVALID_LOGIN, remote);
+                }
+            } else {
+                server.sendError(Errors.Error.INVALID_LOGIN, remote);
             }
         }
     }
