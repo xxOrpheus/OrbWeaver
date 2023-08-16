@@ -8,8 +8,8 @@ const Packet = {};
 const Packets = [
 	// order is protocol sensitive but that's ok , just share this list with the client.
 
-	"USER_LOGIN", // DONE
-	"USER_GET_ID", // DONE
+	"USER_LOGIN",
+	"USER_GET_ID",
 	"USER_LOGOUT", // TODO: Logout
 
 	"GROUP_NEW",
@@ -19,7 +19,7 @@ const Packets = [
 	"GROUP_SET_STAGE", // TODO: Set the play area
 	"GROUP_NOTIFY", // TODO: Periodically update the group's last active time (likely based off of setting updates or a player update)
 
-	"PLAYER_PROP", // TOOD: Set the player's prop
+	"PLAYER_PROP", // TODO: Set the player's prop
 	"PLAYER_LOCATION", // TODO: Update the player's location
 	"PLAYER_ORIENTATION", // TODO: Update the player's orientation
 	"PLAYER_NOTIFY", // TODO: Periodically update the player's last active time

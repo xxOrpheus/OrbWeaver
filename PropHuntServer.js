@@ -10,8 +10,8 @@ const JWT = require("jsonwebtoken");
 
 class PropHuntServer {
 	#server;
-	#users;
-	#groups;
+	users;
+	groups;
 
 	constructor() {
 		this.server = dgram.createSocket("udp4");
@@ -51,23 +51,30 @@ class PropHuntServer {
 
 			offset++;
 
-            // TODO: JWT should always be received here and passed to the rest of the functions as needed
+            var token = Packets.utf8Serializer(message, 1, offset, remote);
+            if(token.data.length > 0) {
+                offset = token.offset;
+                token = token.data[0];
+                if (Packets.Packets[action] != null) {
+                    switch (action) {
+                        case Packets.Packet.USER_LOGIN:
+                            this.users.login(this, message, offset, remote, token);
+                            break;
 
-			if (Packets.Packets[action] != null) {
-				switch (action) {
-					case Packets.Packet.USER_LOGIN:
-						this.users.login(this, message, offset, remote);
-						break;
+                        case Packets.Packet.GROUP_NEW:
+                            this.groups.createGroup(this, message, offset, remote, token);
+                            break;
 
-					case Packets.Packet.GROUP_NEW:
-						this.groups.createGroup(this, message, offset, remote);
-						break;
+                        case Packets.Packet.GROUP_JOIN:
+                            this.groups.joinGroup(this, message, offset, remote, token);
+                            break;
 
-					case Packets.Packet.GROUP_JOIN:
-						this.groups.joinGroup(this, message, offset, remote);
-						break;
-				}
-			}
+                        case Packets.Packet.PLAYER_PROP:
+                            this.groups.setPlayerProp(this, message, offset, remote, token);
+                            break;
+                    }
+                }
+            }
 		} catch (error) {
 			this.serverLog("Error receiving packet");
 			console.debug(error);
