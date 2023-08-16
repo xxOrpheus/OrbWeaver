@@ -32,13 +32,13 @@ class PropHuntGroupList {
 						this.addUser(userId, userId);
 						server.serverLog(users.users[userId].username + " has created a group (" + userId + ")");
 					} else {
-						server.sendError(Errors.Error.ALREADY_IN_GROUP);
+						server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
 					}
 				} else {
-					server.sendError(Errors.Error.INVALID_WORLD);
+					server.sendError(Errors.Error.INVALID_WORLD, remote);
 				}
 			} else {
-				server.sendError(Errors.Error.INVALID_LOGIN);
+				server.sendError(Errors.Error.INVALID_LOGIN, remote);
 			}
 		}
 		//}

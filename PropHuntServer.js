@@ -9,6 +9,8 @@ const Errors = require("./Errors.js");
 const JWT = require("jsonwebtoken");
 
 class PropHuntServer {
+	packetTimes = new Map();
+
 	#server;
 	users;
 	groups;
@@ -36,6 +38,24 @@ class PropHuntServer {
 
 	#handleMessage(message, remote) {
 		try {
+			const now = Date.now();
+
+			this.packetTimes.forEach((timestamp, address) => {
+				if (now - timestamp > Config.TICK_LENGTH) {
+					this.packetTimes.delete(address);
+				}
+			});
+
+			if (!this.packetTimes.has(remote.address)) {
+				this.packetTimes.set(remote.address, now);
+			} else {
+				if (now - this.packetTimes.get(remote.address) <= Config.TICK_LENGTH) {
+					this.serverLog("\x1b[31m" + remote.address + " is going too fast!\x1b[0m");
+					return;
+				}
+				this.packetTimes.set(remote.address, now);
+			}
+
 			if (message.length < 3) {
 				this.serverLog("\x1b[31mMalformed packet: Insufficient data length");
 				return;
@@ -51,30 +71,30 @@ class PropHuntServer {
 
 			offset++;
 
-            var token = Packets.utf8Serializer(message, 1, offset, remote);
-            if(token.data.length > 0) {
-                offset = token.offset;
-                token = token.data[0];
-                if (Packets.Packets[action] != null) {
-                    switch (action) {
-                        case Packets.Packet.USER_LOGIN:
-                            this.users.login(this, message, offset, remote, token);
-                            break;
+			var token = Packets.utf8Serializer(message, 1, offset, remote);
+			if (token.data.length > 0) {
+				offset = token.offset;
+				token = token.data[0];
+				if (Packets.Packets[action] != null) {
+					switch (action) {
+						case Packets.Packet.USER_LOGIN:
+							this.users.login(this, message, offset, remote, token);
+							break;
 
-                        case Packets.Packet.GROUP_NEW:
-                            this.groups.createGroup(this, message, offset, remote, token);
-                            break;
+						case Packets.Packet.GROUP_NEW:
+							this.groups.createGroup(this, message, offset, remote, token);
+							break;
 
-                        case Packets.Packet.GROUP_JOIN:
-                            this.groups.joinGroup(this, message, offset, remote, token);
-                            break;
+						case Packets.Packet.GROUP_JOIN:
+							this.groups.joinGroup(this, message, offset, remote, token);
+							break;
 
-                        case Packets.Packet.PLAYER_PROP:
-                            this.groups.setPlayerProp(this, message, offset, remote, token);
-                            break;
-                    }
-                }
-            }
+						case Packets.Packet.PLAYER_PROP:
+							this.groups.setPlayerProp(this, message, offset, remote, token);
+							break;
+					}
+				}
+			}
 		} catch (error) {
 			this.serverLog("Error receiving packet");
 			console.debug(error);
@@ -120,10 +140,10 @@ class PropHuntServer {
 	}
 
 	verifyUser(userId, jwt) {
-        jwt = this.verifyJWT(jwt);
-        if(jwt.id == userId) {
-            return true;
-        }
+		jwt = this.verifyJWT(jwt);
+		if (jwt.id == userId) {
+			return true;
+		}
 	}
 
 	getJWT() {

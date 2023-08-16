@@ -38,9 +38,8 @@ client.on("message", function (message, remote) {
 		var userDetails = data.data;
 
 		jwt = userDetails[0];
-		//createGroup(jwt);
+		createGroup(jwt);
         console.log("my jwt" + jwt);
-        //joinGroup(jwt, "4d3e8b0b-82ff-43ee-a110-e8a12f172e7c");
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		data = message.readUint16BE(1);
 		if (Errors.Errors[data]) {

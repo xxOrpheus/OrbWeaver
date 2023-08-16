@@ -52,7 +52,7 @@ class PropHuntUserList {
 							server.sendError(Errors.Error.INVALID_LOGIN, remote);
 						}
 					} else {
-						server.serverLog("invalid name " + username);
+						server.serverLog("invalid name " + JSON.stringify(username));
 						server.sendError(Errors.Error.INVALID_NAME, remote);
 					}
 				} else {
