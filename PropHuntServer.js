@@ -4,11 +4,12 @@ var PropHuntUserList = require("./PropHuntUserList.js");
 const dgram = require("dgram");
 const Config = require("./Config.js");
 const Packets = require("./Packets.js");
-const Errors = require("./Errors.js");
+var Util = require("./Util.js");
 
 const JWT = require("jsonwebtoken");
 
-class PropHuntServer { // TODO: Implement AES encryption or some other standard
+class PropHuntServer {
+	// TODO: Implement AES encryption or some other standard
 	packetTimes = new Map();
 
 	#server;
@@ -57,6 +58,7 @@ class PropHuntServer { // TODO: Implement AES encryption or some other standard
 			if (token.data.length > 0) {
 				offset = token.offset;
 				token = token.data[0];
+				let user;
 				if (Packets.Packets[action] != null) {
 					switch (action) {
 						case Packets.Packet.USER_LOGIN:
@@ -64,15 +66,24 @@ class PropHuntServer { // TODO: Implement AES encryption or some other standard
 							break;
 
 						case Packets.Packet.GROUP_NEW:
-							this.groups.createGroup(this, message, offset, remote, token);
+							user = this.verifyJWT(token);
+							if (user && user.id > -1) {
+								this.groups.createGroup(this, message, offset, remote, token);
+							}
 							break;
 
 						case Packets.Packet.GROUP_JOIN:
-							this.groups.joinGroup(this, message, offset, remote, token);
+							user = this.verifyJWT(token);
+							if (user && user.id > -1) {
+								this.users.users[user.id].joinGroup(this, message, offset, remote, token);
+							}
 							break;
 
 						case Packets.Packet.PLAYER_PROP:
-							this.groups.setPlayerProp(this, message, offset, remote, token);
+							user = this.verifyJWT(token);
+							if (user && user.id > -1) {
+								this.users.users[user.id].setProp(this, message, offset, remote);
+							}
 							break;
 					}
 				}
@@ -85,11 +96,11 @@ class PropHuntServer { // TODO: Implement AES encryption or some other standard
 		}
 	}
 
-    createPacket(packet) {
-        let actionBuffer = Buffer.alloc(1);
-        actionBuffer.writeUInt8(packet, 0);
-        return [actionBuffer];
-    }
+	createPacket(packet) {
+		let actionBuffer = Buffer.alloc(1);
+		actionBuffer.writeUInt8(packet, 0);
+		return [actionBuffer];
+	}
 
 	sendPacket(packet, remote) {
 		packet = Buffer.concat(packet);
@@ -106,14 +117,8 @@ class PropHuntServer { // TODO: Implement AES encryption or some other standard
 			action.writeUInt8(Packets.Packet.ERROR_MESSAGE);
 			let msg = Buffer.alloc(2);
 			msg.writeUInt16BE(error);
-			let buffer = Buffer.concat([action, msg]);
-
-			return this.server.send(buffer, 0, buffer.length, remote.port, remote.address, (err) => {
-				if (err) {
-					console.error("Error sending response:", err);
-				}
-			});
-            this.sendPacket(buffer, remote);
+			let buffer = [action, msg];
+			this.sendPacket(buffer, remote);
 		} else {
 			return false;
 		}

@@ -1,11 +1,8 @@
 var PropHuntGroup = require("./PropHuntGroup.js");
-var PropHuntUser = require("./PropHuntUser.js");
-var PropHuntUserList = require("./PropHuntUserList.js");
-
 var Packets = require("./Packets.js");
 const Errors = require("./Errors.js");
 var Util = require("./Util.js");
-var Config = require("./Config.js");
+var Props = require("./Props.js");
 
 class PropHuntGroupList {
 	constructor() {
@@ -39,64 +36,18 @@ class PropHuntGroupList {
 		}
 	}
 
-	joinGroup(server, message, offset, remote, token) {
-		let groupId = message.readUInt16BE(offset);
-		offset += 2;
-
-		if (token) {
-			var verify = server.verifyJWT(token);
-			if (verify.id) {
-				var user = server.getUsers().users[verify.id];
-				if (user) {
-					if (this.groups[groupId]) {
-						if (!this.groups[groupId].users[verify.id]) {
-							var userId = token.id;
-							server.serverLog(user.username + " joined group " + groupId);
-							this.addUser(server, groupId, verify.id);
-							this.sendUsers(server, remote, groupId);
-							this.sendGroupInfo(server, remote, groupId);
-						} else {
-							// the user is already in the group
-							server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
-						}
-					} else {
-						server.serverLog(user.username + "tried joining invalid group " + groupId);
-						server.sendError(Errors.Error.INVALID_GROUP, remote);
-					}
-				} else {
-					server.sendError(Errors.Error.INVALID_LOGIN, remote);
-				}
-			} else {
-				server.sendError(Errors.Error.INVALID_LOGIN, remote);
-			}
-		}
-	}
-
-	setPlayerProp(server, message, offset, remote, token) {
-		if (token) {
-			groupId = message.readUInt16BE(offset);
-			offset += 2;
-			var verify = server.verifyJWT(token);
-			if (verify.id) {
-				var groupId = message.readUInt16BE(offset);
-				offset += 2;
-				var propId = message.readUInt16BE(offset);
-				offset += 2;
-			}
-		}
-	}
-
 	addUser(server, groupId, userId) {
 		if (this.groups[groupId] && server.users.users[userId]) {
-			if (!this.groups[groupId].users[userId]) {
+			let uid = server.users.users[userId].uid;
+			if (!this.groups[groupId].users.includes(uid)) {
 				server.users.users[userId].groupId = groupId;
-				this.groups[groupId].users[userId] = {
-					status: 0,
-					team: 0,
-					prop: 0,
-					location: { x: 0, y: 0, z: 0 },
-					orientation: 0,
-				};
+				server.users.users[userId].status = 0;
+				server.users.users[userId].team = 0;
+				server.users.users[userId].prop = 0;
+				server.users.users[userId].propType = Props.Prop.WORLD_OBJECT;
+				server.users.users[userId].location = Util.worldPoint(0, 0, 0);
+				server.users.users[userId].orientation = 0;
+				this.groups[groupId].users[uid] = userId;
 			} else {
 				return Errors.Error.ALREADY_IN_GROUP;
 			}
@@ -105,14 +56,18 @@ class PropHuntGroupList {
 		}
 	}
 
+	removeUser(server, groupId, userId) {
+		if (this.groups[groupId] && server.users.users[userId] && server.users[user].groupId == groupId) {
+		}
+	}
+
 	sendUsers(server, remote, groupId) {
 		let packet = server.createPacket(Packets.Packet.GROUP_USERS);
 		var usernames = [];
 		let groupUsers = this.groups[groupId].users;
-		for (const u in groupUsers) {
-			if (server.users.users[u]) {
-				usernames.push(server.users.users[u].username);
-			}
+		for (const uid in groupUsers) {
+			let userId = groupUsers[uid];
+			usernames.push(server.users.users[userId].username);
 		}
 		const serializedUsernames = usernames.map((username) => {
 			const usernameBuffer = Buffer.from(username, "utf8");

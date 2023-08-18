@@ -1,13 +1,11 @@
 const dgram = require("dgram");
 const Config = require("./Config.js");
-var Util = require("./Util.js");
 const Packet = {};
 
 //TODO: RSA Encryption for all packets
 
 const Packets = [
 	// order is protocol sensitive but that's ok , just share this list with the client.
-
 	"USER_LOGIN",
 	"USER_GET_JWT",
 	"USER_LOGOUT", // TODO: Logout

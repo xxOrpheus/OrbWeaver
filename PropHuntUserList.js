@@ -1,4 +1,3 @@
-const dgram = require("dgram");
 const Config = require("./Config.js");
 var Util = require("./Util.js");
 const Packets = require("./Packets.js");

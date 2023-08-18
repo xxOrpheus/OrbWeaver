@@ -1,6 +1,4 @@
 var Util = require("./Util.js");
-var PropHuntUser = require("./PropHuntUser.js");
-const argon2 = require("argon2");
 const Errors = require("./Errors.js");
 
 const { v4: uuidv4 } = require("uuid");
@@ -13,13 +11,14 @@ class PropHuntGroup {
 			return Errors.Errors.INVALID_WORLD;
 		}
 		this.creator = userId;
-		this.users = {};
+		this.users = [];
 		this.world = world;
 		this.id = userId;
 		this.active = Util.currentTime();
 		this.started = 0;
 		this.findLowersScore = false;
 		this.password;
+		this.locked = false;
 		this.countdown = false;
 		this.startTimer = 60;
 		this.timer = this.startTimer;
@@ -95,6 +94,12 @@ class PropHuntGroup {
 		}
 
 		return this.users;
+	}
+
+	async setPassword(password) {
+		this.password = await Util.hash(password).then((result) => {
+			return result;
+		});
 	}
 }
 
