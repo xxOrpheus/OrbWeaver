@@ -6,8 +6,8 @@ class PropHuntUser {
 	constructor(username, password, worldNumber) {
 		this.username = username;
 		this.active = Util.currentTime();
-		this.id = uuidv4();
-        this.groupId = "";
+		this.id = -1;
+        this.groupId = -1;
 		this.world = worldNumber;
 		this.jwt = false;
 		return this;

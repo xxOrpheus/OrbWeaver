@@ -14,8 +14,8 @@ const Packets = [
 
 	"GROUP_NEW",
 	"GROUP_JOIN",
-  "GROUP_USERS",
-  "GROUP_INFO",
+	"GROUP_USERS",
+	"GROUP_INFO",
 	"GROUP_START_GAME", // TODO: Start the game
 	"GROUP_END_GAME", // TODO: End the game
 	"GROUP_SET_STAGE", // TODO: Set the play area

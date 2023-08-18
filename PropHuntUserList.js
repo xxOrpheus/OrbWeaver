@@ -6,7 +6,7 @@ const Errors = require("./Errors.js");
 const PropHuntUser = require("./PropHuntUser.js");
 
 class PropHuntUserList {
-	users = {};
+	users = [];
 
 	async login(server, message, offset, remote, token) {
 		try {
@@ -27,15 +27,18 @@ class PropHuntUserList {
 							// make sure it is a valid world too
 							if (Util.isValidWorld(worldNumber)) {
 								let user = new PropHuntUser(username, password, worldNumber);
-								this.users[user.id] = user;
-								await this.users[user.id].setPassword(password).then((result) => {
+								let userId = this.users.length;
+								this.users[userId] = user;
+								this.users[userId].id = userId;
+
+								await this.users[userId].setPassword(password).then((result) => {
 									// TODO: passwords are useless, accounts are not saved so you never really have to "login". leave this for later development
-									this.users[user.id].jwt = server.getJWT().sign({ id: user.id, username: user.username }, Config.JWT_SECRET_KEY);
-									server.serverLog(username + " has logged in " + user.id);
+									this.users[user.id].jwt = server.getJWT().sign({ id: userId, username: user.username }, Config.JWT_SECRET_KEY);
+									server.serverLog(username + " has logged in " + userId);
 									// send their JWT
 									const actionBuffer = Buffer.alloc(1);
 									actionBuffer.writeUInt8(Packets.Packet.USER_GET_JWT, 0);
-									const jwtBuffer = Buffer.from(this.users[user.id].jwt, "utf8");
+									const jwtBuffer = Buffer.from(this.users[userId].jwt, "utf8");
 									const sizeBuffer = Buffer.from([jwtBuffer.length]);
 									const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer]);
 

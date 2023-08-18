@@ -15,7 +15,7 @@ class PropHuntGroupList {
 	createGroup(server, message, offset, remote, jwt) {
 		let users = server.getUsers();
 		let verify = server.verifyJWT(jwt);
-		if (verify.id) {
+		if (verify.id > -1 && verify.id < 65536) {
 			var userId = verify.id;
 			if (users.users[userId] != null) {
 				let world = users.users[userId].world;
@@ -40,58 +40,48 @@ class PropHuntGroupList {
 	}
 
 	joinGroup(server, message, offset, remote, token) {
-		var sizeBuffer = 1; //read groupId
-		var groupDetails = Packets.utf8Serializer(message, sizeBuffer, offset, remote);
-		offset = groupDetails.offset;
+		let groupId = message.readUInt16BE(offset);
+		offset += 2;
 
 		if (token) {
-			if (groupDetails.data.length >= sizeBuffer) {
-				var groupId = groupDetails.data[0];
-				var verify = server.verifyJWT(token);
-				if (verify.id) {
-					var user = server.getUsers().users[verify.id];
-					if (user) {
-						if (this.groups[groupId]) {
-							if (!this.groups[groupId].users[verify.id]) {
-								var userId = token.id;
-								server.serverLog(user.username + " joined group " + groupId);
-								this.addUser(server, groupId, verify.id);
-								this.sendUsers(server, remote, groupId);
-								this.sendGroupInfo(server, remote, groupId);
-							} else {
-								// the user is already in the group
-								server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
-							}
+			var verify = server.verifyJWT(token);
+			if (verify.id) {
+				var user = server.getUsers().users[verify.id];
+				if (user) {
+					if (this.groups[groupId]) {
+						if (!this.groups[groupId].users[verify.id]) {
+							var userId = token.id;
+							server.serverLog(user.username + " joined group " + groupId);
+							this.addUser(server, groupId, verify.id);
+							this.sendUsers(server, remote, groupId);
+							this.sendGroupInfo(server, remote, groupId);
 						} else {
-							server.serverLog(user.username + "tried joining invalid group " + groupId);
-							server.sendError(Errors.Error.INVALID_GROUP, remote);
+							// the user is already in the group
+							server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
 						}
 					} else {
-						server.sendError(Errors.Error.INVALID_LOGIN, remote);
+						server.serverLog(user.username + "tried joining invalid group " + groupId);
+						server.sendError(Errors.Error.INVALID_GROUP, remote);
 					}
 				} else {
 					server.sendError(Errors.Error.INVALID_LOGIN, remote);
 				}
+			} else {
+				server.sendError(Errors.Error.INVALID_LOGIN, remote);
 			}
 		}
 	}
 
 	setPlayerProp(server, message, offset, remote, token) {
-		var sizeBuffer = 1; //read groupId
-		var groupDetails = Packets.utf8Serializer(message, sizeBuffer, offset, remote);
-		offset = groupDetails.offset;
-
 		if (token) {
-			if (groupDetails.data.length >= sizeBuffer) {
-				var groupId = groupDetails.data[0];
-				var verify = server.verifyJWT(token);
-				if (verify.id) {
-					var sizeBuffer = 1; //read group id
-					var groupDetails = Packets.utf8Serializer(message, sizeBuffer, offset, remote);
-					offset = groupDetails.offset;
-					var propId = message.readUInt16BE(offset);
-					offset += propId.length;
-				}
+			groupId = message.readUInt16BE(offset);
+			offset += 2;
+			var verify = server.verifyJWT(token);
+			if (verify.id) {
+				var groupId = message.readUInt16BE(offset);
+				offset += 2;
+				var propId = message.readUInt16BE(offset);
+				offset += 2;
 			}
 		}
 	}
@@ -143,11 +133,8 @@ class PropHuntGroupList {
 		let packet = server.createPacket(Packets.Packet.GROUP_INFO);
 		if (this.groups[groupId]) {
 			let group = this.groups[groupId];
-			const groupIdBuffer = Buffer.from(groupId, "utf8");
-			const groupCreator = Buffer.from(group.creator, "utf8");
-			const buffer = Buffer.concat([groupIdBuffer, groupCreator]);
-			const sizeBuffer = Buffer.from([groupIdBuffer.length, groupCreator.length]);
-			const packetBuffer = Buffer.concat([sizeBuffer, buffer]);
+			let packetBuffer = Buffer.alloc(2);
+			packetBuffer.writeUint16BE(this.groups[groupId].creator);
 			packet.push(packetBuffer);
 			server.sendPacket(packet, remote);
 		}
