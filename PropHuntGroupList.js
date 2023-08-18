@@ -12,33 +12,32 @@ class PropHuntGroupList {
 	createGroup(server, message, offset, remote, jwt) {
 		let users = server.getUsers();
 		let verify = server.verifyJWT(jwt);
-		if (verify.id > -1 && verify.id < 65536) {
-			var userId = verify.id;
-			if (users.users[userId] != null) {
-				let world = users.users[userId].world;
-				if (Util.isValidWorld(world)) {
-					if (!this.groups[userId]) {
-						this.groups[userId] = new PropHuntGroup(userId, world);
-						// add the creator to the list of users -- group ID is synonymous with the user ID
-						this.addUser(server, userId, userId);
-						server.serverLog(users.users[userId].username + " has created a group (" + userId + ")");
-						this.sendUsers(server, remote, userId);
-						this.sendGroupInfo(server, remote, userId);
-					} else {
-						server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
-					}
+		var userId = verify.id;
+		if (users.users[userId] != null) {
+			let world = users.users[userId].world;
+			let user = users.users[userId];
+			if (Util.isValidWorld(world)) {
+				if (!this.groups[userId]) {
+					this.groups[userId] = new PropHuntGroup(userId, world);
+					// add the creator to the list of users -- group ID is synonymous with the user ID
+					this.addUser(server, userId, userId);
+					server.serverLog(users.users[userId].username + " has created a group (" + userId + ")");
+					this.sendUsers(server, remote, userId);
+					this.sendGroupInfo(server, remote, userId);
 				} else {
-					server.sendError(Errors.Error.INVALID_WORLD, remote);
+					server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
 				}
 			} else {
-				server.sendError(Errors.Error.INVALID_LOGIN, remote);
+				server.sendError(Errors.Error.INVALID_WORLD, remote);
 			}
+		} else {
+			server.sendError(Errors.Error.INVALID_LOGIN, remote);
 		}
 	}
 
 	addUser(server, groupId, userId) {
 		if (this.groups[groupId] && server.users.users[userId]) {
-			let uid = server.users.users[userId].uid;
+			let uid = server.users.users[userId].id;
 			if (!this.groups[groupId].users.includes(uid)) {
 				server.users.users[userId].groupId = groupId;
 				server.users.users[userId].status = 0;
@@ -47,7 +46,7 @@ class PropHuntGroupList {
 				server.users.users[userId].propType = Props.Prop.WORLD_OBJECT;
 				server.users.users[userId].location = Util.worldPoint(0, 0, 0);
 				server.users.users[userId].orientation = 0;
-				this.groups[groupId].users[uid] = userId;
+				this.groups[groupId].users[uid] = uid;
 			} else {
 				return Errors.Error.ALREADY_IN_GROUP;
 			}
@@ -65,9 +64,10 @@ class PropHuntGroupList {
 		let packet = server.createPacket(Packets.Packet.GROUP_USERS);
 		var usernames = [];
 		let groupUsers = this.groups[groupId].users;
-		for (const uid in groupUsers) {
-			let userId = groupUsers[uid];
-			usernames.push(server.users.users[userId].username);
+		for (const u in groupUsers) {
+			if (server.users.users[u]) {
+				usernames.push(server.users.users[u].username);
+			}
 		}
 		const serializedUsernames = usernames.map((username) => {
 			const usernameBuffer = Buffer.from(username, "utf8");

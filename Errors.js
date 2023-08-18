@@ -6,7 +6,8 @@ const Errors = [
 	"INVALID_WORLD",
 	"INVALID_GROUP",
 	"ALREADY_LOGGED_IN",
-	"ALREADY_IN_GROUP"
+	"ALREADY_IN_GROUP",
+	"INVALID_PROP_TYPE"
 ];
 
 Errors.forEach((error, errorCode) => {

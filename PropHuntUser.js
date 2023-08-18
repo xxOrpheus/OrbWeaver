@@ -1,15 +1,17 @@
 const Util = require("./Util.js");
 const { v4: uuidv4 } = require("uuid");
+var Packets = require("./Packets.js");
 const Props = require("./Props.js");
-const Errors = require('./Errors.js');
+const Errors = require("./Errors.js");
 //uuidv4(); // ⇨ '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed'
 
 class PropHuntUser {
 	constructor(username, password, worldNumber) {
 		this.username = username;
 		this.active = Util.currentTime();
-		this.id = -1;
-		this.uid = uuidv4();
+		//this.id = -1;
+		//this.uniqueId = uuidv4(); // this was a bad idea
+		this.id = uuidv4();
 		this.groupId = -1;
 		this.world = worldNumber;
 		this.jwt = false;
@@ -29,68 +31,64 @@ class PropHuntUser {
 	}
 
 	joinGroup(server, message, offset, remote, token) {
-		let groupId = message.readUInt16BE(offset);
-		offset += 2;
+		var sizeBuffer = 1; //read groupId
+		var groupDetails = Packets.utf8Serializer(message, sizeBuffer, offset, remote);
+		offset = groupDetails.offset;
 
 		if (token) {
-			var verify = server.verifyJWT(token);
-			var authorized = true;
-			if (verify.id > -1) {
-				var user = server.getUsers().users[verify.id];
-				if (user) {
-					if (server.groups.groups[groupId]) {
-						if (server.groups.groups[groupId].locked == true) {
-							authorized = Util.verifyPasscode(server.groups.groups[groupId].password, passwordInput);
-							let passwordSize = message.readUInt16BE(offset);
-							offset += 2;
-							let passwordInput = Packets.utf8Serializer(message, passwordSize, offset, remote);
-							offset = passwordInput.offset;
-						}
+			if (groupDetails.data.length >= sizeBuffer) {
+				let groupId = groupDetails.data[0];
+				let verify = server.verifyJWT(token);
+				let authorized = true; // default true, only subject to change if group.locked == true
+				if (verify.id) {
+					var user = server.getUsers().users[verify.id];
+					if (user) {
+						if (groupId && server.groups.groups[groupId]) {
+							if (server.groups.groups[groupId].locked == true) { // authorize the user to join the game
+								authorized = Util.verifyPasscode(server.groups.groups[groupId].password, passwordInput);
+								let passwordSize = message.readUInt16BE(offset);
+								offset += 2;
+								let passwordInput = Packets.utf8Serializer(message, passwordSize, offset, remote);
+								offset = passwordInput.offset;
+							}
 
-						if (authorized) {
-							if (!server.groups.groups[groupId].users[user.uid]) {
-								var userId = token.id;
-								server.serverLog(user.username + " joined group " + groupId);
-								server.groups.addUser(server, groupId, verify.id);
-								server.groups.sendUsers(server, remote, groupId);
-								server.groups.sendGroupInfo(server, remote, groupId);
+							if (authorized) {
+								if (!server.groups.groups[groupId].users[user.id]) {
+									var userId = token.id;
+									server.serverLog(user.username + " joined group " + groupId);
+									server.groups.addUser(server, groupId, verify.id);
+									server.groups.sendUsers(server, remote, groupId);
+									server.groups.sendGroupInfo(server, remote, groupId);
+								} else {
+									// the user is already in the group
+									server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
+								}
 							} else {
-								// the user is already in the group
-								server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
+								server.sendError(Errors.Error.INVALID_PASSWORD, remote);
 							}
 						} else {
-							server.sendError(Errors.Error.INVALID_PASSWORD, remote);
+							server.serverLog(user.username + " tried joining invalid group " + Util.sanitize(groupId));
+							server.sendError(Errors.Error.INVALID_GROUP, remote);
 						}
 					} else {
-						server.serverLog(user.username + " tried joining invalid group " + groupId);
-						server.sendError(Errors.Error.INVALID_GROUP, remote);
+						server.sendError(Errors.Error.INVALID_LOGIN, remote);
 					}
-				} else {
-					server.sendError(Errors.Error.INVALID_LOGIN, remote);
 				}
-			} else {
-				server.sendError(Errors.Error.INVALID_LOGIN, remote);
 			}
 		}
 	}
 
-	setProp(server, message, offset, remote, token) {
-		if (token) {
-			groupId = message.readUInt16BE(offset);
-			offset += 2;
-			var verify = server.verifyJWT(token);
-			if (verify.id > -1) {
-				var userId = verify.id;
-				if (this.users[userId].groupId == groupId) {
-					var groupId = message.readUInt16BE(offset);
-					offset += 2;
-					var propType = message.readUInt16BE(offset);
-					offset += 2;
-					var propId = message.readUInt16BE(offset);
-					offset += 2;
-					this.propId = propId;
-				}
-			}
+	setProp(server, message, offset, remote) {
+		var propType = message.readUInt16BE(offset);
+		offset += 2;
+		var propId = message.readUInt16BE(offset);
+		offset += 2;
+
+		if (propType == Props.Prop.WORLD_OBJECT || propType == Props.Prop.NPC) {
+			this.propType = propType;
+			this.propId = propId;
+		} else {
+			server.sendError(Errors.Error.INVALID_PROP_TYPE, remote);
 		}
 	}
 }

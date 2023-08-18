@@ -14,6 +14,7 @@ class PropHuntGroup {
 		this.users = [];
 		this.world = world;
 		this.id = userId;
+		//this.shortId = -1; // that was a bad idea we will leave this to remember how bad of an idea it was 
 		this.active = Util.currentTime();
 		this.started = 0;
 		this.findLowersScore = false;

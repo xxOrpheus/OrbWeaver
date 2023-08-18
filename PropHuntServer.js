@@ -67,23 +67,25 @@ class PropHuntServer {
 
 						case Packets.Packet.GROUP_NEW:
 							user = this.verifyJWT(token);
-							if (user && user.id > -1) {
+							if (user && user.id) {
 								this.groups.createGroup(this, message, offset, remote, token);
 							}
 							break;
 
 						case Packets.Packet.GROUP_JOIN:
 							user = this.verifyJWT(token);
-							if (user && user.id > -1) {
+							if (user && user.id) {
 								this.users.users[user.id].joinGroup(this, message, offset, remote, token);
 							}
 							break;
 
 						case Packets.Packet.PLAYER_PROP:
 							user = this.verifyJWT(token);
-							if (user && user.id > -1) {
+							if (user && user.id) {
 								this.users.users[user.id].setProp(this, message, offset, remote);
+								
 							}
+
 							break;
 					}
 				}

@@ -75,6 +75,10 @@ class Util {
 			return value;
 		});
 	}
+
+	static sanitize(data) {
+		return JSON.stringify(data);
+	}
 }
 
 module.exports = Util;

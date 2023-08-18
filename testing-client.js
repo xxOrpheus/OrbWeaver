@@ -21,7 +21,7 @@ const { group } = require("console");
 // BEGIN USER_LOGIN
 
 // END USER_LOGIN
-login("useraaaae", "password", 420);
+login("usaae", "password", 420);
 
 var userId, jwt, groupId;
 client.on("message", function (message, remote) {
@@ -39,9 +39,9 @@ client.on("message", function (message, remote) {
 		let userDetails = data.data;
 
 		jwt = userDetails[0];
-		//createGroup(jwt);
-		setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
-		joinGroup(jwt, 0);
+		createGroup(jwt);
+		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
+		//joinGroup(jwt, "asdfasd");
 		console.log("my jwt" + jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		data = message.readUint16BE(offset);
@@ -86,26 +86,21 @@ function createGroup(jwt) {
 	console.log("createGroup called");
 }
 
-function setProp(jwt, propType, propId) {
-	if (groupId > -1 && groupId < 65536) {
-		let packet = createPacket(Packets.Packet.PLAYER_PROP, jwt);
-		let groupIdBuffer = Buffer.alloc(2);
-		groupIdBuffer.writeUInt16BE(groupId);
-		let propTypeBuffer = Buffer.alloc(2);
-		propTypeBuffer.writeUInt16BE(propType); // Props.Prop.WORLD_OBJECT & Props.Prop.NPC
-		let propIdBuffer = Buffer.alloc(2);
-		propIdBuffer.writeUInt16BE(propId, 0);
-		packet.push(groupIdBuffer, propTypeBuffer, propIdBuffer);
-		sendPacket(packet);
-	}
+function setProp(jwt, propId, groupId) {
+	let packet = createPacket(Packets.Packet.PLAYER_PROP, jwt);
+	groupId = Buffer.from(groupId, "utf8");
+	let gidSize = Buffer.from([groupId.length]);
+	let propIdBuffer = Buffer.alloc(2);
+	propIdBuffer.writeUInt16BE(propId, 0);
+	packet.push(gidSize, groupId, propId);
+	sendPacket(packet);
 }
 
 function joinGroup(jwt, groupId) {
 	let packet = createPacket(Packets.Packet.GROUP_JOIN, jwt);
-	// groupId = Buffer.from(groupId, "utf8");
-	let groupIdBuffer = Buffer.alloc(2);
-	groupIdBuffer.writeUInt16BE(groupId);
-	packet.push(groupIdBuffer);
+	groupId = Buffer.from(groupId, "utf8");
+	let gidSize = Buffer.from([groupId.length]);
+	packet.push(gidSize, groupId);
 	sendPacket(packet);
 }
 
