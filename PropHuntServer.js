@@ -39,6 +39,7 @@ class PropHuntServer {
 
 	#handleMessage(message, remote) {
 		try {
+			console.log("Message received: ", message.toString());
 			if (message.length < 3) {
 				this.serverLog("\x1b[31mMalformed packet: Insufficient data length");
 				return;

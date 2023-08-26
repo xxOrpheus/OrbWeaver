@@ -15,11 +15,12 @@ class PropHuntUserList {
 			offset = loginDetails.offset;
 			if (loginDetails.data.length >= size) {
 				var username = loginDetails.data[0].toLowerCase().trim();
+				var password = loginDetails.data[1];
 				// do not try to login if they're already logged in
-				if (!this.playerOnline(username)) {
+				let playerOnline = this.playerOnline(username);
+				if (!playerOnline) {
 					// make sure it is a valid name first
 					if (Util.isValidName(username)) {
-						var password = loginDetails.data[1];
 						var worldNumber = message.readUInt16BE(offset);
 						// we don't want a valid token as this is supposed to be a new login
 						if (!server.verifyJWT(token)) {
@@ -35,17 +36,7 @@ class PropHuntUserList {
 									this.users[userUID].jwt = server.getJWT().sign({ id: userUID, username: user.username }, Config.JWT_SECRET_KEY);
 									server.serverLog(username + " has logged in " + userUID);
 									// send their JWT
-									const actionBuffer = Buffer.alloc(1);
-									actionBuffer.writeUInt8(Packets.Packet.USER_GET_JWT, 0);
-									const jwtBuffer = Buffer.from(this.users[userUID].jwt, "utf8");
-									const sizeBuffer = Buffer.from([jwtBuffer.length]);
-									const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer]);
-
-									server.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
-										if (err) {
-											console.error("Error sending response:", err);
-										}
-									});
+									this.sendJWT(this.users[userUID], remote);
 								});
 							} else {
 								server.sendError(Errors.Error.INVALID_WORLD, remote);
@@ -58,7 +49,14 @@ class PropHuntUserList {
 						server.sendError(Errors.Error.INVALID_NAME, remote);
 					}
 				} else {
-					server.sendError(Errors.Error.ALREADY_LOGGED_IN, remote);
+					await Util.verifyPasscode(playerOnline.password, password).then((result) => {
+						// try to verify the users previous session
+						if(result != false) {
+							this.sendJWT(this.users[userUID].jwt, remote);
+						} else {
+							server.sendError(Errors.Error.INVALID_PASSWORD, remote);
+						}
+					});
 				}
 			}
 		} catch (error) {
@@ -71,10 +69,24 @@ class PropHuntUserList {
 		username = username.toLowerCase().trim();
 		for (const u in this.users) {
 			if (this.users[u].username && this.users[u].username == username) {
-				return true;
+				return this.users[u];
 			}
 		}
 		return false;
+	}
+
+	sendJWT(jwt, remote) {
+		const actionBuffer = Buffer.alloc(1);
+		actionBuffer.writeUInt8(Packets.Packet.USER_GET_JWT, 0);
+		const jwtBuffer = Buffer.from(jwt, "utf8");
+		const sizeBuffer = Buffer.from([jwtBuffer.length]);
+		const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer]);
+
+		server.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
+			if (err) {
+				console.error("Error sending response:", err);
+			}
+		});
 	}
 
 	getUsers() {

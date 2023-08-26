@@ -56,7 +56,6 @@ class PropHuntGroupList {
 
 	removeUser(server, groupId, userId) {
 		if (this.groups[groupId] && server.users.users[userId] && server.users[user].groupId == groupId) {
-			
 		}
 	}
 
@@ -86,8 +85,12 @@ class PropHuntGroupList {
 		let packet = server.createPacket(Packets.Packet.GROUP_INFO);
 		if (this.groups[groupId]) {
 			let group = this.groups[groupId];
-			let packetBuffer = Buffer.alloc(2);
-			packetBuffer.writeUint16BE(this.groups[groupId].creator);
+			let creator = server.users.users[group.creator].username;
+
+			let creatorBuffer = Buffer.from(creator, "utf8");
+			const sizeBuffer = Buffer.from([creator.length]);
+			const packetBuffer = Buffer.concat([sizeBuffer, creatorBuffer]);
+
 			packet.push(packetBuffer);
 			server.sendPacket(packet, remote);
 		}
