@@ -43,7 +43,7 @@ class PropHuntUser {
 				if (verify.id) {
 					var user = server.getUsers().users[verify.id];
 					if (user) {
-						if (groupId && server.groups.groups[groupId]) {
+						if (server.groups.groups[groupId]) {
 							if (server.groups.groups[groupId].locked == true) { // authorize the user to join the game
 								authorized = Util.verifyPasscode(server.groups.groups[groupId].password, passwordInput);
 								let passwordSize = message.readUInt16BE(offset);
@@ -79,8 +79,8 @@ class PropHuntUser {
 	}
 
 	setProp(server, message, offset, remote) {
-		var propType = message.readUInt16BE(offset);
-		offset += 2;
+		var propType = message.readUInt8(offset);
+		offset++;
 		var propId = message.readUInt16BE(offset);
 		offset += 2;
 

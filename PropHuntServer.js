@@ -79,21 +79,24 @@ class PropHuntServer {
 							}
 							break;
 
+						case Packets.Packet.PLAYER_LOCATION:
+							 user = this.verifyJWT(token);
+							 if (user && user.id) {
+								this.users.users[user.id].updateLocation 
+							 }
+
 						case Packets.Packet.PLAYER_PROP:
 							user = this.verifyJWT(token);
 							if (user && user.id) {
 								this.users.users[user.id].setProp(this, message, offset, remote);
 								
 							}
-
 							break;
 					}
 				}
 			}
 		} catch (error) {
-			this.serverLog("Error receiving packet");
 			console.debug(error);
-
 			// this.handleError ?
 		}
 	}

@@ -37,8 +37,7 @@ class PropHuntGroupList {
 
 	addUser(server, groupId, userId) {
 		if (this.groups[groupId] && server.users.users[userId]) {
-			let uid = server.users.users[userId].id;
-			if (!this.groups[groupId].users.includes(uid)) {
+			if (!this.groups[groupId].users.includes(userId)) {
 				server.users.users[userId].groupId = groupId;
 				server.users.users[userId].status = 0;
 				server.users.users[userId].team = 0;
@@ -46,7 +45,7 @@ class PropHuntGroupList {
 				server.users.users[userId].propType = Props.Prop.WORLD_OBJECT;
 				server.users.users[userId].location = Util.worldPoint(0, 0, 0);
 				server.users.users[userId].orientation = 0;
-				this.groups[groupId].users[uid] = uid;
+				this.groups[groupId].users[userId] = userId;
 			} else {
 				return Errors.Error.ALREADY_IN_GROUP;
 			}
@@ -57,6 +56,7 @@ class PropHuntGroupList {
 
 	removeUser(server, groupId, userId) {
 		if (this.groups[groupId] && server.users.users[userId] && server.users[user].groupId == groupId) {
+			
 		}
 	}
 
@@ -76,10 +76,8 @@ class PropHuntGroupList {
 			return Buffer.concat([lengthBuffer, usernameBuffer]);
 		});
 		const userListBuffer = Buffer.concat(serializedUsernames);
-
 		// Push the userListBuffer to the packet
 		packet.push(userListBuffer);
-
 		// Send the complete packet to the remote client
 		server.sendPacket(packet, remote);
 	}

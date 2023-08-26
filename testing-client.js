@@ -86,10 +86,10 @@ function createGroup(jwt) {
 	console.log("createGroup called");
 }
 
-function setProp(jwt, propId, groupId) {
+function setProp(jwt, propType, propId) {
 	let packet = createPacket(Packets.Packet.PLAYER_PROP, jwt);
-	groupId = Buffer.from(groupId, "utf8");
-	let gidSize = Buffer.from([groupId.length]);
+	let propTypeBuffer = Buffer.alloc(1);
+	propTypeBuffer.writeUInt8(propType);
 	let propIdBuffer = Buffer.alloc(2);
 	propIdBuffer.writeUInt16BE(propId, 0);
 	packet.push(gidSize, groupId, propId);
