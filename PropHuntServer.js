@@ -39,7 +39,6 @@ class PropHuntServer {
 
 	#handleMessage(message, remote) {
 		try {
-			console.log("Message received: ", message.toString());
 			if (message.length < 3) {
 				this.serverLog("\x1b[31mMalformed packet: Insufficient data length");
 				return;
@@ -66,6 +65,10 @@ class PropHuntServer {
 							this.users.login(this, message, offset, remote, token);
 							break;
 
+						case Packets.Packet.USER_LOGOUT:
+							this.users.logout(this, message, offset, remote, token);
+							break;
+
 						case Packets.Packet.GROUP_NEW:
 							user = this.verifyJWT(token);
 							if (user && user.id) {
@@ -79,6 +82,13 @@ class PropHuntServer {
 								this.users.users[user.id].joinGroup(this, message, offset, remote, token);
 							}
 							break;
+
+						case Packets.Packet.GROUP_LEAVE:
+							user = this.verifyJWT(token);
+							if(user && user.id) {
+								this.users.users[user.id].leaveGroup(this, message, offset, remote, token);
+							}
+							break;;
 
 						case Packets.Packet.PLAYER_LOCATION:
 							 user = this.verifyJWT(token);

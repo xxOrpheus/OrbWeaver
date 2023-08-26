@@ -37,7 +37,7 @@ class PropHuntGroupList {
 
 	addUser(server, groupId, userId) {
 		if (this.groups[groupId] && server.users.users[userId]) {
-			if (!this.groups[groupId].users.includes(userId)) {
+			if (!this.groups[groupId].users[userId]) {
 				server.users.users[userId].groupId = groupId;
 				server.users.users[userId].status = 0;
 				server.users.users[userId].team = 0;
@@ -55,7 +55,21 @@ class PropHuntGroupList {
 	}
 
 	removeUser(server, groupId, userId) {
-		if (this.groups[groupId] && server.users.users[userId] && server.users[user].groupId == groupId) {
+		if (this.groups[groupId] && server.users.users[userId] && server.users.users[userId].groupId == groupId) {
+			if (this.groups[groupId].users[userId]) {
+				server.users.users[userId].groupId = "";
+				delete this.groups[groupId].users[userId];
+				console.log("Attempting to remove user " + server.users.users[userId].username + " from a group");
+				if(this.groups[groupId].users.length < 1) {
+					console.log("[" + groupId + "] No users left in group, purging...");
+					delete this.groups[groupId];
+				}
+			} else {
+				console.log("user was not in group, cannot remove", groupId, userId);
+				return Errors.Error.ALREADY_IN_GROUP;
+			}
+		} else {
+			console.log("error removing user from group", this.groups[groupId], server.users.users[userId], server.users.users[userId].groupId==groupId);
 		}
 	}
 
@@ -88,8 +102,9 @@ class PropHuntGroupList {
 			let creator = server.users.users[group.creator].username;
 
 			let creatorBuffer = Buffer.from(creator, "utf8");
-			const sizeBuffer = Buffer.from([creator.length]);
-			const packetBuffer = Buffer.concat([sizeBuffer, creatorBuffer]);
+			let groupIdBuffer = Buffer.from(groupId, "utf8");
+			const sizeBuffer = Buffer.from([creator.length, groupId.length]);
+			const packetBuffer = Buffer.concat([sizeBuffer, creatorBuffer, groupIdBuffer]);
 
 			packet.push(packetBuffer);
 			server.sendPacket(packet, remote);

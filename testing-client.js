@@ -43,6 +43,7 @@ client.on("message", function (message, remote) {
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
 		//joinGroup(jwt, "asdfasd");
 		console.log("my jwt" + jwt);
+		leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		data = message.readUint16BE(offset);
 		if (Errors.Errors[data]) {
@@ -64,6 +65,8 @@ client.on("message", function (message, remote) {
 		groupId = message.readUInt16BE(offset);
 		offset += 2;
 		console.log("recv group info (id " + groupId + ")");
+	} else if (action == Packets.Packet.GROUP_LEAVE) {
+		console.log("removed from group");
 	} else {
 		console.log("Unknown MSG recv: ", JSON.stringify(message), "action " + action);
 	}
@@ -101,6 +104,11 @@ function joinGroup(jwt, groupId) {
 	groupId = Buffer.from(groupId, "utf8");
 	let gidSize = Buffer.from([groupId.length]);
 	packet.push(gidSize, groupId);
+	sendPacket(packet);
+}
+
+function leaveGroup(jwt) {
+	let packet = createPacket(Packets.Packet.GROUP_LEAVE, jwt);
 	sendPacket(packet);
 }
 

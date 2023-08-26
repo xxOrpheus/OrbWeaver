@@ -12,6 +12,7 @@ const Packets = [
 
 	"GROUP_NEW",
 	"GROUP_JOIN",
+	"GROUP_LEAVE",
 	"GROUP_USERS",
 	"GROUP_INFO",
 	"GROUP_START_GAME", // TODO: Start the game

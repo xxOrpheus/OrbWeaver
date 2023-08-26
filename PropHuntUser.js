@@ -12,7 +12,7 @@ class PropHuntUser {
 		//this.id = -1;
 		//this.uniqueId = uuidv4(); // this was a bad idea
 		this.id = uuidv4();
-		this.groupId = -1;
+		this.groupId = "";
 		this.world = worldNumber;
 		this.jwt = false;
 		this.status = 0;
@@ -73,6 +73,23 @@ class PropHuntUser {
 					} else {
 						server.sendError(Errors.Error.INVALID_LOGIN, remote);
 					}
+				}
+			}
+		}
+	}
+
+	leaveGroup(server, message, offset, remote, token) {
+		let verify = server.verifyJWT(token);
+		if (verify.id) {
+			if (this.groupId != null) {
+				if (server.groups.groups[this.groupId].users[this.id]) {
+					server.serverLog("[" + this.id + "] " + this.username + " left group " + this.groupId);
+					let packet = server.createPacket(Packets.Packet.GROUP_LEAVE);
+					server.sendPacket(packet, remote);
+					server.groups.removeUser(server, this.groupId, this.id);
+				} else {
+					// the user is not in a group
+					server.sendError(Errors.Error.INVALID_GROUP, remote);
 				}
 			}
 		}

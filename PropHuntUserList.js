@@ -32,11 +32,10 @@ class PropHuntUserList {
 								this.users[userUID].shortId = this.users.length;
 
 								await this.users[userUID].setPassword(password).then((result) => {
-									// TODO: passwords are useless, accounts are not saved so you never really have to "login". leave this for later development
 									this.users[userUID].jwt = server.getJWT().sign({ id: userUID, username: user.username }, Config.JWT_SECRET_KEY);
-									server.serverLog(username + " has logged in " + userUID);
+									server.serverLog("[" + userUID + "]" + username + " has logged in (World " + worldNumber + ")");
 									// send their JWT
-									this.sendJWT(this.users[userUID], remote);
+									this.sendJWT(this.users[userUID].jwt, remote, server);
 								});
 							} else {
 								server.sendError(Errors.Error.INVALID_WORLD, remote);
@@ -52,7 +51,7 @@ class PropHuntUserList {
 					await Util.verifyPasscode(playerOnline.password, password).then((result) => {
 						// try to verify the users previous session
 						if(result != false) {
-							this.sendJWT(this.users[userUID].jwt, remote);
+							this.sendJWT(playerOnline.jwt, remote, server);
 						} else {
 							server.sendError(Errors.Error.INVALID_PASSWORD, remote);
 						}
@@ -65,6 +64,10 @@ class PropHuntUserList {
 		}
 	}
 
+	logout(server, message, offset, remote, token) {
+		
+	}
+
 	playerOnline(username) {
 		username = username.toLowerCase().trim();
 		for (const u in this.users) {
@@ -75,7 +78,7 @@ class PropHuntUserList {
 		return false;
 	}
 
-	sendJWT(jwt, remote) {
+	sendJWT(jwt, remote, server) {
 		const actionBuffer = Buffer.alloc(1);
 		actionBuffer.writeUInt8(Packets.Packet.USER_GET_JWT, 0);
 		const jwtBuffer = Buffer.from(jwt, "utf8");
