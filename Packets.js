@@ -19,10 +19,8 @@ const Packets = [
 	"GROUP_END_GAME", // TODO: End the game
 	"GROUP_SET_STAGE", // TODO: Set the play area
 	"GROUP_NOTIFY", // TODO: Periodically update the group's last active time (likely based off of setting updates or a player update)
-
-	"PLAYER_PROP", // TODO: Set the player's prop
-	"PLAYER_LOCATION", // TODO: Update the player's location
-	"PLAYER_ORIENTATION", // TODO: Update the player's orientation
+	"PLAYER_UPDATES",
+	"PLAYER_PROP", 
 	"PLAYER_NOTIFY", // TODO: Periodically update the player's last active time
 
 	"ERROR_MESSAGE",

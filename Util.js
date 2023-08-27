@@ -16,6 +16,12 @@ class Util {
 		return { x: dX, y: dY, z: dZ };
 	}
 
+	static distance(p1, p2) {
+		const deltaX = p2.x - p1.x;
+		const deltaY = p2.y - p1.y;
+		return Math.sqrt(deltaX ** 2 + deltaY ** 2);
+	}
+
 	static isValidWorld(world) {
 		world = Number(world);
 		return world > 300 && world < 581;

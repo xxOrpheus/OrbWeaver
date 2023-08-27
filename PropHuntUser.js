@@ -54,10 +54,9 @@ class PropHuntUser {
 
 							if (authorized) {
 								if (!server.groups.groups[groupId].users[user.id]) {
-									var userId = token.id;
 									server.serverLog(user.username + " joined group " + groupId);
 									server.groups.addUser(server, groupId, verify.id);
-									server.groups.sendUsers(server, remote, groupId);
+									server.groups.updateUsers(server, remote, groupId, verify.id);
 									server.groups.sendGroupInfo(server, remote, groupId);
 								} else {
 									// the user is already in the group
