@@ -21,12 +21,13 @@ const { group } = require("console");
 // BEGIN USER_LOGIN
 
 // END USER_LOGIN
-login("usaae", "password", 420);
+login("booty", "password", 420);
 
 var userId, jwt, groupId;
 client.on("message", function (message, remote) {
 	let offset = 0;
 	const action = message.readUInt8(0);
+	console.log('Received packet data:', message.toString('utf8'));
 	if (action < 0 || action > Packets.Packet.length) {
 		this.serverLog("\x1b[31mUnsupported packet action: " + Packets.Packets[action]);
 		return;
@@ -39,28 +40,38 @@ client.on("message", function (message, remote) {
 		let userDetails = data.data;
 
 		jwt = userDetails[0];
-		createGroup(jwt);
+		//createGroup(jwt);
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
-		//joinGroup(jwt, "asdfasd");
+		joinGroup(jwt, "bac37511-95cc-4de4-b62f-0d01ca99de70");
 		console.log("my jwt" + jwt);
-		leaveGroup(jwt);
+		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		data = message.readUint16BE(offset);
 		if (Errors.Errors[data]) {
 			console.log("ERROR RECV: " + Errors.Errors[data]);
 		}
-	} else if (action == Packets.Packet.GROUP_USERS) {
-		const usernames = [];
-		while (offset < message.length) {
-			const usernameLength = message.readUInt16BE(offset);
-			offset += 2;
-			const usernameBuffer = message.slice(offset, offset + usernameLength);
-			offset += usernameLength;
-			const username = usernameBuffer.toString("utf8");
-			usernames.push(username);
+	} else if (action == Packets.Packet.PLAYER_UPDATES) {
+		let users = [];
+		let buffer = message.slice(1, message.length);
+		let updateOffset = 0;
+		while (updateOffset < buffer.length) {
+			let user = {};
+			user.propId = buffer.readUInt16BE(updateOffset);
+			updateOffset += 2;
+			user.propType = buffer.readUInt8(updateOffset);
+			updateOffset++;
+			user.orientation = buffer.readUInt8(updateOffset);
+			updateOffset++;
+			user.team = buffer.readUInt8(updateOffset);
+			updateOffset++;
+			user.status = buffer.readUInt8(updateOffset);
+			updateOffset++;
+			let nameLength = buffer.readUInt8(updateOffset);
+			updateOffset++;
+			user.username = buffer.toString("utf-8", updateOffset, updateOffset + nameLength);
+			updateOffset += nameLength;
+			users.push(user);
 		}
-		console.log("joined group - " + usernames.length + " users online: ");
-		console.log(usernames);
 	} else if (action == Packets.Packet.GROUP_INFO) {
 		groupId = message.readUInt16BE(offset);
 		offset += 2;
