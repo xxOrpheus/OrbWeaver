@@ -45,16 +45,16 @@ class PropHuntGroup {
 
 	startGame(password) {
 		this.setupTeams();
-		this.gameLog("Teams selected, let the countdown begin (" + this.startTimer + "s)");
-		var groupCountdown = function () {
+		this.gameLog(`Teams selected, let the countdown begin (${this.startTimer}s)`);
+		const groupCountdown = function () {
 			this.startTimer = this.timer;
-			this.timer -= 1;
+			this.timer--;
 			if (this.timer <= 0) {
 				clearInterval(this.countdown);
 				this.timer = this.startTimer;
 				this.countdown = false;
 				this.started = true;
-				this.gameLog("Game started (" + Object.keys(this.users).length + " players)");
+				this.gameLog(`Game started (${Object.keys(this.users).length} players)`);
 			}
 		};
 		this.countdown = setInterval(groupCountdown.bind(this), 1000);
@@ -74,7 +74,7 @@ class PropHuntGroup {
 	}
 
 	gameLog(msg) {
-		console.log("\x1b[33m[\x1b[34m" + this.id + "\x1b[33m] (\x1b[31m" + this.creator + "\x1b[33m)\x1b[39m: \x1b[37m" + msg);
+		console.log(`\x1b[33m[\x1b[34m${this.id}\x1b[33m] (\x1b[31m${this.creator}\x1b[33m)\x1b[39m: \x1b[37m${msg}`);
 	}
 
 	setupTeams() {

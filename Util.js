@@ -8,12 +8,17 @@ class Util {
 
 	static isValidName(name) {
 		const regex = /^[a-zA-Z\d\-_\s]{1,16}$/i;
-		var valid = regex.test(name);
-		return valid;
+		return regex.test(name);
 	}
 
 	static worldPoint(dX, dY, dZ) {
 		return { x: dX, y: dY, z: dZ };
+	}
+
+	static packLocation(worldPoint, orientation) {}
+
+	static unpackLocation(combined) {
+
 	}
 
 	static distance(p1, p2) {

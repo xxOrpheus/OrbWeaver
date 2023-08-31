@@ -1,5 +1,3 @@
-const dgram = require("dgram");
-const Config = require("./Config.js");
 const Packet = {};
 
 //TODO: RSA Encryption for all packets
@@ -19,8 +17,12 @@ const Packets = [
 	"GROUP_END_GAME", // TODO: End the game
 	"GROUP_SET_STAGE", // TODO: Set the play area
 	"GROUP_NOTIFY", // TODO: Periodically update the group's last active time (likely based off of setting updates or a player update)
-	"PLAYER_UPDATES",
-	"PLAYER_PROP", 
+	"PLAYER_LIST",
+	"PLAYER_UPDATE", // all update_ packets are sent with player_update packet
+		"UPDATE_PROP",
+		"UPDATE_LOCATION",
+		"UPDATE_TEAM",
+		"UPDATE_STATUS",
 	"PLAYER_NOTIFY", // TODO: Periodically update the player's last active time
 
 	"ERROR_MESSAGE",
@@ -30,10 +32,10 @@ Packets.forEach((action, index) => {
 	Packet[action] = index;
 });
 
-utf8Serializer = function (message, size, offset, remote) {
+utf8Serializer = (message, size, offset, remote) => {
 	// TODO: Can we some how make this update the original offset reference to avoid manually trying to manage offsets? Maybe a bad idea though
 	const sizeBuffer = [];
-	for (var i = 0; i < size; i++) {
+	for (let i = 0; i < size; i++) {
 		sizeBuffer.push(message.readUInt8(offset));
 		offset += 1;
 	}
@@ -46,11 +48,11 @@ utf8Serializer = function (message, size, offset, remote) {
 	return { data, offset };
 };
 
-utf8Serialize = function (buffer) {
-	let packet = [],
-		sizeBuffer = [];
+utf8Serialize = (buffer) => {
+	const packet = [];
+	let sizeBuffer = [];
 	for (const data in buffer) {
-		let buf = Buffer.from(data, "utf8");
+		const buf = Buffer.from(data, "utf8");
 		packet.push(buf);
 		sizeBuffer.push(buf.length);
 	}
