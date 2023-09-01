@@ -16,7 +16,7 @@ const Errors = require("./Errors.js");
 // BEGIN USER_LOGIN
 
 // END USER_LOGIN
-login("booty", "password", 420);
+login("booooty", "password", 420);
 //const location = Util.worldPoint(1234,5678,9012);
 //const masked = Util.maskLocation(location, 512);
 //const unmasked = Util.unmaskLocation(masked);
@@ -44,7 +44,7 @@ client.on("message", function (message, remote) {
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
 		//joinGroup(jwt, "bac37511-95cc-4de4-b62f-0d01ca99de70");
 		console.log(`my jwt${jwt}`);
-		//updateLocation(1234, 3456, 1, 512);
+		updateLocation(1234, 3456, 1, 512);
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		data = message.readUint16BE(offset);
@@ -52,6 +52,9 @@ client.on("message", function (message, remote) {
 			console.log(`ERROR RECV: ${Errors.Errors[data]}`);
 		}
 	} else if (action == Packets.Packet.PLAYER_UPDATE) {
+
+	} else if (action == Packets.Packet.PLAYER_LIST) {
+
 	} else if (action == Packets.Packet.GROUP_INFO) {
 		groupId = message.readUInt16BE(offset);
 		offset += 2;

@@ -20,6 +20,7 @@ class PropHuntUser {
 		this.propId = 0;
 		this.propType = Props.Prop.WORLD_OBJECT;
 		this.location = new Location(0, 0, 0);
+		this.regionId = 0;
 		this.orientation = 0;
 		return this;
 	}

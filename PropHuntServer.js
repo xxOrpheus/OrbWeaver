@@ -83,7 +83,6 @@ class PropHuntServer {
 							break;
 
 						case Packets.Packet.PLAYER_UPDATE:
-							console.log("Received player_update");
 							this.gametick.enqueueUpdate(message, offset, remote, token);
 							break;
 					}

@@ -82,7 +82,7 @@ class Location {
 	}
 
 	getPaletteId(x, y) {
-		return ((this.getRegionY() + y) * 8 - 6) / 8 + (((this.getRegionX() + x - 6) / 8) << 8);
+		return Math.trunc(((this.getRegionY() + y) * 8 - 6) / 8 + (((this.getRegionX() + x - 6) / 8) << 8));
 	}
 
 	setNewInRegion(isNewInRegion) {
