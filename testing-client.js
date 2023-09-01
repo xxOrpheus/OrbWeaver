@@ -40,11 +40,11 @@ client.on("message", function (message, remote) {
 		const userDetails = data.data;
 
 		jwt = userDetails[0];
-		//createGroup(jwt);
+		createGroup(jwt);
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
 		//joinGroup(jwt, "bac37511-95cc-4de4-b62f-0d01ca99de70");
 		console.log(`my jwt${jwt}`);
-		updateLocation(1234, 3456, 1, 512);
+		//updateLocation(1234, 3456, 1, 512);
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		data = message.readUint16BE(offset);

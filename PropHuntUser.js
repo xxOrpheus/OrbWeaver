@@ -31,6 +31,7 @@ class PropHuntUser {
 	}
 
 	joinGroup(server, message, offset, remote, token) {
+		token = server.verifyJWT(token);
 		const sizeBuffer = 1; //read groupId
 		const groupDetails = Packets.utf8Deserialize(message, sizeBuffer, offset, remote);
 		offset = groupDetails.offset;
@@ -43,6 +44,7 @@ class PropHuntUser {
 			const user = server.getUsers().users[token.id];
 			if (user) {
 				if (server.groups.groups[groupId]) {
+					// if the group is locked try to verify the password
 					if (server.groups.groups[groupId].locked == true) {
 						// authorize the user to join the game
 						authorized = Util.verifyPasscode(server.groups.groups[groupId].password, passwordInput);

@@ -18,7 +18,7 @@ const Packets = [
 	"GROUP_END_GAME", // TODO: End the game
 	"GROUP_SET_STAGE", // TODO: Set the play area
 	"PLAYER_LIST",
-	"PLAYER_UPDATE", // all update_ packets are sent with player_update packet
+	"PLAYER_UPDATE", // PLAYER_UPDATE opcode is followed by PlayerUpdate type found below
 
 	"ERROR_MESSAGE",
 ];

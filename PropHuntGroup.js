@@ -14,12 +14,11 @@ class PropHuntGroup {
 		this.users = [];
 		this.world = world;
 		this.id = userId;
-		//this.shortId = -1; // that was a bad idea we will leave this to remember how bad of an idea it was 
-		this.active = Util.currentTime();
-		this.started = 0;
-		this.findLowersScore = false;
+		this.active = Util.currentTime(); // TODO: use last active time to decide when to remove a group
+		this.started = 0; // 0 = waiting 1 = started , we could probably change this safely to a boolean later
+		this.findLowersScore = false; // if a player is found, does their score go down? this will only work if we add rounds 
 		this.password;
-		this.locked = false;
+		this.locked = false; // if this.locked = true, require this.password to join the game 
 		this.countdown = false;
 		this.startTimer = 60;
 		this.timer = this.startTimer;
@@ -77,6 +76,9 @@ class PropHuntGroup {
 		console.log(`\x1b[33m[\x1b[34m${this.id}\x1b[33m] (\x1b[31m${this.creator}\x1b[33m)\x1b[39m: \x1b[37m${msg}`);
 	}
 
+
+	// splits the users evenly into two teams, seekers and hiders, hiders are always the larger group
+	// TODO: could this sorting algorithm be refined? 
 	setupTeams() {
 		const usersArray = Object.values(this.users);
 		Util.shuffleArray(usersArray); // randomly sort the users
@@ -86,7 +88,6 @@ class PropHuntGroup {
 		const [team1, team2] = largerGroup === group1 ? [2, 1] : [1, 2];
 
 		for (const user of largerGroup) {
-			//props are always the larger group
 			this.users[user.id].team = team1;
 		}
 

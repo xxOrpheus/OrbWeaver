@@ -48,8 +48,10 @@ class PropHuntUserList {
 					else if (Util.isValidWorld(worldNumber)) {
 						const user = new PropHuntUser(username, password, worldNumber);
 						const userId = user.id;
+						// cycle numeric id's for use in packets to save bandwidth vs sending the username
 						const numericId = this.recycledIDs.length > 0 ? this.recycledIDs.shift() : this.nextId++;
 						user.numericId = numericId;
+						// map numeric id's to uuid's so we don't have to do complex looping
 						this.uuidMap[numericId] = userId;
 						this.users[userId] = user;
 						this.users[userId].remote = remote;
@@ -79,6 +81,7 @@ class PropHuntUserList {
 			const userId = verify.id;
 			if (this.server.users.users[userId]?.numericId > -1) {
 				const numericId = this.server.users.users[userId].numericId;
+				// delete the numeric id so it can be reused in the recycler
 				delete this.uuidMap[numericId];
 				this.recycledIDs.push(numericId);
 				delete this.server.users.users[userId];

@@ -11,11 +11,12 @@ class PropHuntGroupList {
 		this.server = server;
 	}
 
-	createGroup(message, offset, remote, jwt) {
+	createGroup(message, offset, remote, token) {
 		const users = this.server.getUsers();
-		const verify = this.server.verifyJWT(jwt);
+		const verify = this.server.verifyJWT(token);
 		const userId = verify.id;
-		if (users.users[userId] != null) {
+		if (users.users[userId] != null && verify) {
+			// TODO: add more sanity checks/verification to createGroup
 			const world = users.users[userId].world;
 			if (Util.isValidWorld(world)) {
 				if (!this.groups[userId]) {
@@ -40,10 +41,11 @@ class PropHuntGroupList {
 	addUser(groupId, userId) {
 		if (this.groups[groupId] && this.server.users.users[userId]) {
 			if (!this.groups[groupId].users[userId]) {
+				// we must reset some data, but not all, as things like location are subject to change constantly
 				this.server.users.users[userId].groupId = groupId;
 				this.server.users.users[userId].status = 0;
 				this.server.users.users[userId].team = 0;
-				this.groups[groupId].users[userId] = userId;
+				this.groups[groupId].users[userId] = userId; // add the user's id to the group user list
 			} else {
 				return Errors.Error.ALREADY_IN_GROUP;
 			}
@@ -58,6 +60,7 @@ class PropHuntGroupList {
 				this.server.users.users[userId].groupId = "";
 				delete this.groups[groupId].users[userId];
 				console.log(`Attempting to remove user ${this.server.users.users[userId].username} from a group`);
+				// if no users are in the group we can safely remove the entire group
 				if (this.groups[groupId].users.length < 1) {
 					console.log(`[${groupId}] No users left in group, purging...`);
 					delete this.groups[groupId];
@@ -85,6 +88,7 @@ class PropHuntGroupList {
 		this.server.sendPacket(packet, remote);
 	}
 
+	// called from GameTick where each update is added to a queue sorted by ingame world region, or all updates as a whole if a new player enters the region
 	sendPlayerUpdate(remote, groupId, updateUserId, updateType) {
 		// packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID UPDATE_DATA...
 		const updatePacket = this.server.createPacket(Packets.Packet.PLAYER_UPDATE);
@@ -125,6 +129,7 @@ class PropHuntGroupList {
 		this.server.sendPacket(updatePacket, remote);
 	}
 
+	// used when a new group is created so the player knows what their group ID is for sharing.
 	sendGroupInfo(remote, groupId) {
 		if (!this.groups[groupId]) {
 			return Errors.Error.INVALID_GROUP;

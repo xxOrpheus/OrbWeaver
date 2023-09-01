@@ -6,34 +6,15 @@ class Util {
 		return Math.floor(Date.now() / 1000);
 	}
 
+	// should be 12 characters but i think encoding was making it push over that limit sometimes so this will be fine at 16 
 	static isValidName(name) {
 		const regex = /^[a-zA-Z\d\-_\s]{1,16}$/i;
 		return regex.test(name);
 	}
 
-	static worldPoint(dX, dY, dZ) {
-		return { x: dX, y: dY, z: dZ };
-	}
-
-	static packLocation(worldPoint, orientation) {}
-
-	static unpackLocation(combined) {
-
-	}
-
-	static distance(p1, p2) {
-		const deltaX = p2.x - p1.x;
-		const deltaY = p2.y - p1.y;
-		return Math.sqrt(deltaX ** 2 + deltaY ** 2);
-	}
-
 	static isValidWorld(world) {
 		world = Number(world);
 		return world > 300 && world < 581;
-	}
-
-	static jsonError(msg, code) {
-		return { error: msg, code: Number(code) };
 	}
 
 	static shuffleArray(array) {
@@ -74,17 +55,6 @@ class Util {
 		} catch (err) {
 			//...
 		}
-	}
-
-	static safeResponse(data) {
-		const hidden = ["password", "countdown", "startTimer", "users"];
-
-		return JSON.stringify(data, (key, value) => {
-			if (hidden.includes(key)) {
-				return undefined;
-			}
-			return value;
-		});
 	}
 
 	static sanitize(data) {

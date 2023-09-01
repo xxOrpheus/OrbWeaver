@@ -46,22 +46,22 @@ class PropHuntServer {
 			}
 			// TODO: throttle/rate limit packets
 			let offset = 0;
-
-			const action = message.readUInt8(0);
-			if (action < 0 || action > Packets.Packet.length) {
-				this.serverLog(`\x1b[31mUnsupported packet action: ${action}`);
+			
+			const opCode = message.readUInt8(0); // first byte is op code, it could probably be trimmed from the packet but we will leave it anyways 
+			if (opCode < 0 || opCode > Packets.Packet.length) {
+				this.serverLog(`\x1b[31mUnsupported packet action: ${opCode}`);
 				return;
 			}
 
 			offset++;
 
-			let token = Packets.utf8Deserialize(message, 1, offset, remote);
+			let token = Packets.utf8Deserialize(message, 1, offset, remote); // the next part is the (token size+)JWT token, might not be signed so we handle that in the following calls 
 			if (token.data.length > 0) {
 				offset = token.offset;
 				token = token.data[0];
 				let user;
-				if (Packets.Packets[action] != null) {
-					switch (action) {
+				if (Packets.Packets[opCode] != null) {
+					switch (opCode) {
 						case Packets.Packet.USER_LOGIN:
 							this.users.login(message, offset, remote, token);
 							break;
@@ -96,9 +96,9 @@ class PropHuntServer {
 	}
 
 	createPacket(packet) {
-		const actionBuffer = Buffer.alloc(1);
-		actionBuffer.writeUInt8(packet, 0);
-		return [actionBuffer];
+		const opCodeBuffer = Buffer.alloc(1); // first byte is always the opcode 
+		opCodeBuffer.writeUInt8(packet, 0);
+		return [opCodeBuffer];
 	}
 
 	sendPacket(packet, remote) {
@@ -113,9 +113,9 @@ class PropHuntServer {
 	sendError(error, remote) {
 		if (remote?.address && remote.port) {
 			const action = Buffer.alloc(1);
-			action.writeUInt8(Packets.Packet.ERROR_MESSAGE);
+			action.writeUInt8(Packets.Packet.ERROR_MESSAGE); 
 			const msg = Buffer.alloc(2);
-			msg.writeUInt16BE(error);
+			msg.writeUInt16BE(error); // the error code is translated by the list of constants/enums in Errors.js/java
 			const buffer = [action, msg];
 			this.sendPacket(buffer, remote);
 		} else {
@@ -148,7 +148,7 @@ class PropHuntServer {
 	verifyJWT(jwt) {
 		try {
 			return this.getJWT().verify(jwt, Config.JWT_SECRET_KEY);
-		} catch (error) {
+		} catch (error) { // TODO: should probably handle errors better for JWTs (expired? malformed? etc...)
 			if (error.message === "jwt malformed") {
 				return false;
 			}
