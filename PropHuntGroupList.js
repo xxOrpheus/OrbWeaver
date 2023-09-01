@@ -85,7 +85,8 @@ class PropHuntGroupList {
 		this.server.sendPacket(packet, remote);
 	}
 
-	sendPlayerUpdate(remote, groupId, updateUserId, updateType) { // packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID UPDATE_DATA... 
+	sendPlayerUpdate(remote, groupId, updateUserId, updateType) {
+		// packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID UPDATE_DATA...
 		const updatePacket = this.server.createPacket(Packets.Packet.PLAYER_UPDATE);
 		if (!this.groups[groupId].users[updateUserId]) {
 			return;
@@ -97,7 +98,7 @@ class PropHuntGroupList {
 		updatePacket.push(setup);
 		switch (updateType) {
 			case Packets.Packet.UPDATE_LOCATION:
-				if(updateUser.location != null) {
+				if (updateUser.location != null) {
 					let updateLocation = updateUser.location;
 					let locationBuffer = Buffer.alloc(2 + 2 + 1 + 2); // 2 x 2 y 1 z 2 orientation
 					locationBuffer.writeUInt16BE(updateLocation.x);

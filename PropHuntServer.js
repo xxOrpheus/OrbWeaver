@@ -55,7 +55,7 @@ class PropHuntServer {
 
 			offset++;
 
-			let token = Packets.utf8Serializer(message, 1, offset, remote);
+			let token = Packets.utf8Deserialize(message, 1, offset, remote);
 			if (token.data.length > 0) {
 				offset = token.offset;
 				token = token.data[0];

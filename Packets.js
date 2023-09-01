@@ -29,19 +29,13 @@ Packets.forEach((action, index) => {
 	Packet[action] = index;
 });
 
-const PlayerUpdates = [
-	"PROP",
-	"LOCATION",
-	"TEAM",
-	"STATUS"
-]
+const PlayerUpdates = ["PROP", "LOCATION", "TEAM", "STATUS"];
 
 PlayerUpdates.forEach((action, index) => {
 	PlayerUpdate[action] = index;
 });
 
-utf8Serializer = (message, size, offset, remote) => {
-	// TODO: Can we some how make this update the original offset reference to avoid manually trying to manage offsets? Maybe a bad idea though
+utf8Deserialize = (message, size, offset, remote) => {
 	const sizeBuffer = [];
 	for (let i = 0; i < size; i++) {
 		sizeBuffer.push(message.readUInt8(offset));
@@ -68,4 +62,4 @@ utf8Serialize = (buffer) => {
 	return { data: packet, size: sizeBuffer };
 };
 
-module.exports = { Packets, Packet, PlayerUpdates, PlayerUpdate, utf8Serializer, utf8Serialize };
+module.exports = { Packets, Packet, PlayerUpdates, PlayerUpdate, utf8Deserialize, utf8Serialize };

@@ -8,6 +8,7 @@ class PropHuntUserList {
 	users = [];
 	uuidMap = {};
 	regionMap = {};
+	needsUpdate = [];
 	server = null;
 
 	constructor(server) {
@@ -21,7 +22,7 @@ class PropHuntUserList {
 		try {
 			// TODO: I don't feel like this really belongs here but it's ok for now
 			const size = 2; //read username, password  (utf8)
-			const loginDetails = Packets.utf8Serializer(message, size, offset, remote);
+			const loginDetails = Packets.utf8Deserialize(message, size, offset, remote);
 			offset = loginDetails.offset;
 			if (loginDetails.data.length >= size) {
 				const username = loginDetails.data[0].toLowerCase().trim();

@@ -19,7 +19,7 @@ class PropHuntUser {
 		this.team = 0;
 		this.propId = 0;
 		this.propType = Props.Prop.WORLD_OBJECT;
-		this.location = new Location(0,0,0);
+		this.location = new Location(0, 0, 0);
 		this.orientation = 0;
 		return this;
 	}
@@ -32,7 +32,7 @@ class PropHuntUser {
 
 	joinGroup(server, message, offset, remote, token) {
 		const sizeBuffer = 1; //read groupId
-		const groupDetails = Packets.utf8Serializer(message, sizeBuffer, offset, remote);
+		const groupDetails = Packets.utf8Deserialize(message, sizeBuffer, offset, remote);
 		offset = groupDetails.offset;
 		if (!(token && groupDetails.data.length >= sizeBuffer)) {
 			return Errors.Error.INVALID_GROUP;
@@ -43,11 +43,12 @@ class PropHuntUser {
 			const user = server.getUsers().users[token.id];
 			if (user) {
 				if (server.groups.groups[groupId]) {
-					if (server.groups.groups[groupId].locked == true) { // authorize the user to join the game
+					if (server.groups.groups[groupId].locked == true) {
+						// authorize the user to join the game
 						authorized = Util.verifyPasscode(server.groups.groups[groupId].password, passwordInput);
 						const passwordSize = message.readUInt16BE(offset);
 						offset += 2;
-						const passwordInput = Packets.utf8Serializer(message, passwordSize, offset, remote);
+						const passwordInput = Packets.utf8Deserialize(message, passwordSize, offset, remote);
 						offset = passwordInput.offset;
 					}
 

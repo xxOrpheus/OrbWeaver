@@ -16,6 +16,19 @@ class GameTick {
 
 	startTick() {
 		this.tick = setInterval(() => {
+			// if a player enters a new region, they need to receive all player's data as they will have no prior knowledge 
+			for (const needsUpdateUserId in this.server.users.needsUpdate) {
+				const needsUpdateUser = this.server.users.users[needsUpdateUserId];
+				const needsUpdateRegionId = needsUpdateUser.regionId;
+				for(const needsUpdateRegionUsersId in this.server.users.regionMap[needsUpdateRegionId]) {
+					if(needsUpdateRegionId != needsUpdateUser.id) {
+						// update logic 
+					}
+				}
+				delete this.server.users.needsUpdate[needsUpdateUser];
+			}
+
+			// otherwise we will only send updates as needed from the queue
 			for (const updateType in this.updateQueue) {
 				if (this.updateQueue[updateType].length > 0) {
 					const updateUsers = this.updateQueue[updateType];
@@ -73,15 +86,20 @@ class GameTick {
 					const orientation = message.readUInt16BE(offset);
 					offset += 2;
 					let username = user.username;
-					const location = new Location(x, y, z);
+					const location = user.location;
+					location.setAbsX(x);
+					location.setAbsY(y);
+					location.setZ(z);
 					const regionId = location.getPaletteId();
-					if (this.server.users.users[user.id].regionId != regionId) {
-						// we must remove them from their previous region mapping, we can also request all the players in this region here
-						// TODO: request other player's updates for this region ....
+					if (user.regionId != regionId) {
+						// we must remove them from their previous region mapping
 						delete this.server.users.regionMap[this.server.users.users[user.id].regionId][user.id];
+						// assign the new region id and add them to the region map, add them to the list of users that need a full update
+						this.server.users.users[user.id].regionId = regionId;
+						this.server.users.regionMap[regionId] = user.id;
+						this.server.users.needsUpdate.push(user.id);
 					}
-					this.server.users.users[user.id].regionId = regionId; // assign the new region id and add them to the region map
-					this.server.users.regionMap[regionId] = user.id;
+					this.server.users.users[user.id].location = location;
 					console.log(`Location update received for player ${username}: `, x, y, z, orientation, regionId);
 					console.log(JSON.stringify(this.updateQueue));
 					break;

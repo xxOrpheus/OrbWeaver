@@ -27,7 +27,7 @@ let groupId;
 client.on("message", function (message, remote) {
 	let offset = 0;
 	const action = message.readUInt8(0);
-	console.log('Received packet data:', message.toString('utf8'));
+	console.log("Received packet data:", message.toString("utf8"));
 	if (action < 0 || action > Packets.Packet.length) {
 		this.serverLog(`\x1b[31mUnsupported packet action: ${Packets.Packets[action]}`);
 		return;
@@ -35,7 +35,7 @@ client.on("message", function (message, remote) {
 	offset++;
 	if (action == Packets.Packet.USER_GET_JWT) {
 		const size = 1;
-		const data = Packets.utf8Serializer(message, size, offset, remote);
+		const data = Packets.utf8Deserialize(message, size, offset, remote);
 		offset = data.offset;
 		const userDetails = data.data;
 
@@ -44,7 +44,7 @@ client.on("message", function (message, remote) {
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
 		//joinGroup(jwt, "bac37511-95cc-4de4-b62f-0d01ca99de70");
 		console.log(`my jwt${jwt}`);
-		updateLocation(1234,3456,1,512);
+		updateLocation(1234, 3456, 1, 512);
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		data = message.readUint16BE(offset);
@@ -52,7 +52,6 @@ client.on("message", function (message, remote) {
 			console.log(`ERROR RECV: ${Errors.Errors[data]}`);
 		}
 	} else if (action == Packets.Packet.PLAYER_UPDATE) {
-
 	} else if (action == Packets.Packet.GROUP_INFO) {
 		groupId = message.readUInt16BE(offset);
 		offset += 2;
@@ -104,22 +103,22 @@ function leaveGroup(jwt) {
 	sendPacket(packet);
 }
 
-function updateLocation(x,y,z,orientation) {
-    const packet = createPacket(Packets.Packet.PLAYER_UPDATE, jwt);
-    let updateBuffer = Buffer.alloc(1 + 2 + 2 + 1 + 2); // 2 x 2 y 1 z 2 orientation
+function updateLocation(x, y, z, orientation) {
+	const packet = createPacket(Packets.Packet.PLAYER_UPDATE, jwt);
+	let updateBuffer = Buffer.alloc(1 + 2 + 2 + 1 + 2); // 2 x 2 y 1 z 2 orientation
 
-    updateBuffer.writeUInt8(Packets.PlayerUpdate.LOCATION);
-    updateBuffer.writeUInt16BE(x, 1);
-    updateBuffer.writeUInt16BE(y, 3);
-    updateBuffer.writeUInt8(z, 5);
-    updateBuffer.writeUInt16BE(orientation, 6);
+	updateBuffer.writeUInt8(Packets.PlayerUpdate.LOCATION);
+	updateBuffer.writeUInt16BE(x, 1);
+	updateBuffer.writeUInt16BE(y, 3);
+	updateBuffer.writeUInt8(z, 5);
+	updateBuffer.writeUInt16BE(orientation, 6);
 
-    packet.push(updateBuffer);
+	packet.push(updateBuffer);
 
-    console.log("location");
-    console.log(x, y, z, orientation);
+	console.log("location");
+	console.log(x, y, z, orientation);
 
-    sendPacket(packet);
+	sendPacket(packet);
 }
 
 function createPacket(packet, token) {
