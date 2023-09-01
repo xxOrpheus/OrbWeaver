@@ -17,15 +17,18 @@ class GameTick {
 	startTick() {
 		this.tick = setInterval(() => {
 			// if a player enters a new region, they need to receive all player's data as they will have no prior knowledge 
+			// TODO: these variable names are confusing me i am half cut let's fix it later 
 			for (const needsUpdateUserId in this.server.users.needsUpdate) {
 				const needsUpdateUser = this.server.users.users[needsUpdateUserId];
 				const needsUpdateRegionId = needsUpdateUser.regionId;
-				for(const needsUpdateRegionUsersId in this.server.users.regionMap[needsUpdateRegionId]) {
-					if(needsUpdateRegionId != needsUpdateUser.id) {
+				for(const usersInNeedRegionId in this.server.users.regionMap[needsUpdateRegionId]) {
+					const userNeed = this.server.users.users[usersInNeedRegionId];
+					// check that it's not the user requesting updates first 
+					if(userNeed.id != needsUpdateUserId) {
 						// update logic 
 					}
 				}
-				delete this.server.users.needsUpdate[needsUpdateUser];
+				delete this.server.users.needsUpdate[needsUpdateUserId];
 			}
 
 			// otherwise we will only send updates as needed from the queue
