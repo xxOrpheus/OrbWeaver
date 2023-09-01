@@ -7,14 +7,16 @@ const PropHuntUser = require("./PropHuntUser.js");
 class PropHuntUserList {
 	users = [];
 	uuidMap = {};
+	server = null;
 
-	constructor() {
+	constructor(server) {
+		this.server = server;
 		this.nextId = 0;
 		this.uuidMap = {};
 		this.recycledIDs = [];
 	}
 
-	async login(server, message, offset, remote, token) {
+	async login(message, offset, remote, token) {
 		try {
 			// TODO: I don't feel like this really belongs here but it's ok for now
 			const size = 2; //read username, password  (utf8)
@@ -29,7 +31,7 @@ class PropHuntUserList {
 					await Util.verifyPasscode(playerOnline.password, password).then((result) => {
 						// try to verify the users previous session
 						if (result == false) {
-							server.sendError(Errors.Error.INVALID_PASSWORD, remote);
+							this.server.sendError(Errors.Error.INVALID_PASSWORD, remote);
 						} else {
 							this.sendJWT(playerOnline.jwt, remote, server);
 						}
@@ -38,46 +40,46 @@ class PropHuntUserList {
 				else if (Util.isValidName(username)) {
 					const worldNumber = message.readUInt16BE(offset);
 					// we don't want a valid token as this is supposed to be a new login
-					if (server.verifyJWT(token)) {
-						server.sendError(Errors.Error.INVALID_LOGIN, remote);
+					if (this.server.verifyJWT(token)) {
+						this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
 					} // make sure it is a valid world too
 					else if (Util.isValidWorld(worldNumber)) {
 						const user = new PropHuntUser(username, password, worldNumber);
+						const userId = user.id;
 						const numericId = this.recycledIDs.length > 0 ? this.recycledIDs.shift() : this.nextId++;
-						server.users.users[userId].numericId = numericId;
+						user.numericId = numericId;
 						this.uuidMap[numericId] = userId;
-						const userUID = user.id;
-						this.users[userUID] = user;
-						this.users[userUID].shortId = this.users.length;
+						this.users[userId] = user;
+						this.users[userId].remote = remote;
 
-						await this.users[userUID].setPassword(password).then((result) => {
-							this.users[userUID].jwt = server.getJWT().sign({ id: userUID, username: user.username }, Config.JWT_SECRET_KEY);
-							server.serverLog(`[${userUID}]${username} has logged in (World ${worldNumber})`);
-							this.sendJWT(this.users[userUID].jwt, remote, server);
+						await this.users[userId].setPassword(password).then((result) => {
+							this.users[userId].jwt = this.server.getJWT().sign({ id: userId, username: user.username }, Config.JWT_SECRET_KEY);
+							this.server.serverLog(`[${userId}] ${username} has logged in (World ${worldNumber})`);
+							this.sendJWT(this.users[userId].jwt, remote);
 						});
 					} else {
-						server.sendError(Errors.Error.INVALID_WORLD, remote);
+						this.server.sendError(Errors.Error.INVALID_WORLD, remote);
 					}
 				} else {
-					server.serverLog(`invalid name ${JSON.stringify(username)}`);
-					server.sendError(Errors.Error.INVALID_NAME, remote);
+					this.server.serverLog(`invalid name ${JSON.stringify(username)}`);
+					this.server.sendError(Errors.Error.INVALID_NAME, remote);
 				}
 			}
 		} catch (error) {
-			server.sendError(Errors.Error.INVALID_LOGIN, remote);
+			this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
 			console.debug(error);
 		}
 	}
 
-	logout(server, message, offset, remote, token) {
+	logout(message, offset, remote, token) {
 		const verify = Util.verifyJWT(token);
 		if (verify.id) {
 			const userId = verify.id;
-			if (server.users.users[userId]?.numericId > -1) {
-				const numericId = server.users.users[userId].numericId;
+			if (this.server.users.users[userId]?.numericId > -1) {
+				const numericId = this.server.users.users[userId].numericId;
 				delete this.uuidMap[numericId];
 				this.recycledIDs.push(numericId);
-				delete server.users.users[userId];
+				delete this.server.users.users[userId];
 			}
 		}
 	}
@@ -92,14 +94,14 @@ class PropHuntUserList {
 		return false;
 	}
 
-	sendJWT(jwt, remote, server) {
+	sendJWT(jwt, remote) {
 		const actionBuffer = Buffer.alloc(1);
 		actionBuffer.writeUInt8(Packets.Packet.USER_GET_JWT, 0);
 		const jwtBuffer = Buffer.from(jwt, "utf8");
 		const sizeBuffer = Buffer.from([jwtBuffer.length]);
 		const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer]);
 
-		server.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
+		this.server.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
 			if (err) {
 				console.error("Error sending response:", err);
 			}

@@ -1,10 +1,10 @@
 const PropHuntGroupList = require("./PropHuntGroupList.js");
 const PropHuntUserList = require("./PropHuntUserList.js");
+const GameTick = require("./GameTick.js");
 
 const dgram = require("dgram");
 const Config = require("./Config.js");
 const Packets = require("./Packets.js");
-const GameTick = require("./GameTick.js");
 
 const JWT = require("jsonwebtoken");
 
@@ -33,9 +33,9 @@ class PropHuntServer {
 
 		this.server.bind(Config.SERVER_PORT);
 
-		this.groups = new PropHuntGroupList();
-		this.users = new PropHuntUserList();
-		this.gametick = new GameTick();
+		this.groups = new PropHuntGroupList(this);
+		this.users = new PropHuntUserList(this);
+		this.gametick = new GameTick(this);
 	}
 
 	#handleMessage(message, remote) {
@@ -49,7 +49,7 @@ class PropHuntServer {
 
 			const action = message.readUInt8(0);
 			if (action < 0 || action > Packets.Packet.length) {
-				this.serverLog(`\x1b[31mUnsupported packet action: ${Packets.Packets[action]}`);
+				this.serverLog(`\x1b[31mUnsupported packet action: ${action}`);
 				return;
 			}
 
@@ -63,46 +63,28 @@ class PropHuntServer {
 				if (Packets.Packets[action] != null) {
 					switch (action) {
 						case Packets.Packet.USER_LOGIN:
-							this.users.login(this, message, offset, remote, token);
+							this.users.login(message, offset, remote, token);
 							break;
 
 						case Packets.Packet.USER_LOGOUT:
-							this.users.logout(this, message, offset, remote, token);
+							this.users.logout(message, offset, remote, token);
 							break;
 
 						case Packets.Packet.GROUP_NEW:
-							user = this.verifyJWT(token);
-							if (user?.id) {
-								this.groups.createGroup(this, message, offset, remote, token);
-							}
+							this.groups.createGroup(message, offset, remote, token);
 							break;
 
 						case Packets.Packet.GROUP_JOIN:
-							user = this.verifyJWT(token);
-							if (user?.id) {
-								this.users.users[user.id].joinGroup(this, message, offset, remote, token);
-							}
+							this.users.users[user.id].joinGroup(message, offset, remote, token);
 							break;
 
 						case Packets.Packet.GROUP_LEAVE:
-							user = this.verifyJWT(token);
-							if(user?.id) {
-								this.users.users[user.id].leaveGroup(this, message, offset, remote, token);
-							}
-							break;;
+							this.users.users[user.id].leaveGroup(message, offset, remote, token);
+							break;
 
-						case Packets.Packet.PLAYER_LOCATION:
-							 user = this.verifyJWT(token);
-							 if (user?.id) {
-								this.users.users[user.id].updateLocation 
-							 }
-
-						case Packets.Packet.PLAYER_PROP:
-							user = this.verifyJWT(token);
-							if (user?.id) {
-								this.users.users[user.id].setProp(this, message, offset, remote);
-								
-							}
+						case Packets.Packet.PLAYER_UPDATE:
+							console.log("Received player_update");
+							this.gametick.enqueueUpdate(message, offset, remote, token);
 							break;
 					}
 				}

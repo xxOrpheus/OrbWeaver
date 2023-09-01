@@ -1,4 +1,5 @@
 const Packet = {};
+const PlayerUpdate = {};
 
 //TODO: RSA Encryption for all packets
 
@@ -19,10 +20,6 @@ const Packets = [
 	"GROUP_NOTIFY", // TODO: Periodically update the group's last active time (likely based off of setting updates or a player update)
 	"PLAYER_LIST",
 	"PLAYER_UPDATE", // all update_ packets are sent with player_update packet
-		"UPDATE_PROP",
-		"UPDATE_LOCATION",
-		"UPDATE_TEAM",
-		"UPDATE_STATUS",
 	"PLAYER_NOTIFY", // TODO: Periodically update the player's last active time
 
 	"ERROR_MESSAGE",
@@ -30,6 +27,17 @@ const Packets = [
 
 Packets.forEach((action, index) => {
 	Packet[action] = index;
+});
+
+const PlayerUpdates = [
+	"PROP",
+	"LOCATION",
+	"TEAM",
+	"STATUS"
+]
+
+PlayerUpdates.forEach((action, index) => {
+	PlayerUpdate[action] = index;
 });
 
 utf8Serializer = (message, size, offset, remote) => {
@@ -60,4 +68,4 @@ utf8Serialize = (buffer) => {
 	return { data: packet, size: sizeBuffer };
 };
 
-module.exports = { Packets, Packet, utf8Serializer, utf8Serialize };
+module.exports = { Packets, Packet, PlayerUpdates, PlayerUpdate, utf8Serializer, utf8Serialize };

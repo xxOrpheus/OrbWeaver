@@ -16,9 +16,9 @@ const Errors = require("./Errors.js");
 // BEGIN USER_LOGIN
 
 // END USER_LOGIN
-//login("booty", "password", 420);
-const location = Util.worldPoint(1234,5678,9012);
-const masked = Util.maskLocation(location, 512);
+login("booty", "password", 420);
+//const location = Util.worldPoint(1234,5678,9012);
+//const masked = Util.maskLocation(location, 512);
 //const unmasked = Util.unmaskLocation(masked);
 
 //console.log(unmasked);
@@ -42,36 +42,17 @@ client.on("message", function (message, remote) {
 		jwt = userDetails[0];
 		//createGroup(jwt);
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
-		joinGroup(jwt, "bac37511-95cc-4de4-b62f-0d01ca99de70");
+		//joinGroup(jwt, "bac37511-95cc-4de4-b62f-0d01ca99de70");
 		console.log(`my jwt${jwt}`);
+		updateLocation(1234,3456,1,512);
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		data = message.readUint16BE(offset);
 		if (Errors.Errors[data]) {
 			console.log(`ERROR RECV: ${Errors.Errors[data]}`);
 		}
-	} else if (action == Packets.Packet.PLAYER_UPDATES) {
-		const users = [];
-		const buffer = message.slice(1, message.length);
-		let updateOffset = 0;
-		while (updateOffset < buffer.length) {
-			const user = {};
-			user.propId = buffer.readUInt16BE(updateOffset);
-			updateOffset += 2;
-			user.propType = buffer.readUInt8(updateOffset);
-			updateOffset++;
-			user.orientation = buffer.readUInt8(updateOffset);
-			updateOffset++;
-			user.team = buffer.readUInt8(updateOffset);
-			updateOffset++;
-			user.status = buffer.readUInt8(updateOffset);
-			updateOffset++;
-			const nameLength = buffer.readUInt8(updateOffset);
-			updateOffset++;
-			user.username = buffer.toString("utf-8", updateOffset, updateOffset + nameLength);
-			updateOffset += nameLength;
-			users.push(user);
-		}
+	} else if (action == Packets.Packet.PLAYER_UPDATE) {
+
 	} else if (action == Packets.Packet.GROUP_INFO) {
 		groupId = message.readUInt16BE(offset);
 		offset += 2;
@@ -121,6 +102,24 @@ function joinGroup(jwt, groupId) {
 function leaveGroup(jwt) {
 	const packet = createPacket(Packets.Packet.GROUP_LEAVE, jwt);
 	sendPacket(packet);
+}
+
+function updateLocation(x,y,z,orientation) {
+    const packet = createPacket(Packets.Packet.PLAYER_UPDATE, jwt);
+    let updateBuffer = Buffer.alloc(1 + 2 + 2 + 1 + 2); // 2 x 2 y 1 z 2 orientation
+
+    updateBuffer.writeUInt8(Packets.PlayerUpdate.LOCATION);
+    updateBuffer.writeUInt16BE(x, 1);
+    updateBuffer.writeUInt16BE(y, 3);
+    updateBuffer.writeUInt8(z, 5);
+    updateBuffer.writeUInt16BE(orientation, 6);
+
+    packet.push(updateBuffer);
+
+    console.log("location");
+    console.log(x, y, z, orientation);
+
+    sendPacket(packet);
 }
 
 function createPacket(packet, token) {
