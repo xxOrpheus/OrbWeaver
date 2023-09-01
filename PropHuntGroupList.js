@@ -74,20 +74,7 @@ class PropHuntGroupList {
 		}
 	}
 
-	sendUserList(remote, groupId) {
-		const packet = this.server.createPacket(Packets.Packet.PLAYER_LIST);
-		const groupUsers = this.groups[groupId].users;
-		for (const u in groupUsers) {
-			const groupUser = this.server.users.users[u];
-			const userBuffer = Buffer.alloc(2 + 1 + groupUser.username.length); // 2 for uint16 (user id) 1 for uint8 (username length) and the rest is the username itself
-			userBuffer.writeUInt16BE(groupUser.numericId);
-			userBuffer.writeUInt8(groupUser.username.length);
-			userBuffer.write(groupUser.username);
-			packet.push(userBuffer);
-		}
-		this.server.sendPacket(packet, remote);
-	}
-
+	
 	// called from GameTick where each update is added to a queue sorted by ingame world region, or all updates as a whole if a new player enters the region
 	sendPlayerUpdate(remote, groupId, updateUserId, updateType) {
 		// packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID UPDATE_DATA...
@@ -127,6 +114,21 @@ class PropHuntGroupList {
 				break;
 		}
 		this.server.sendPacket(updatePacket, remote);
+	}
+	
+	// sends the group player list
+	sendUserList(remote, groupId) {
+		const packet = this.server.createPacket(Packets.Packet.PLAYER_LIST);
+		const groupUsers = this.groups[groupId].users;
+		for (const u in groupUsers) {
+			const groupUser = this.server.users.users[u];
+			const userBuffer = Buffer.alloc(2 + 1 + groupUser.username.length); // 2 for uint16 (user id) 1 for uint8 (username length) and the rest is the username itself
+			userBuffer.writeUInt16BE(groupUser.numericId);
+			userBuffer.writeUInt8(groupUser.username.length);
+			userBuffer.write(groupUser.username);
+			packet.push(userBuffer);
+		}
+		this.server.sendPacket(packet, remote);
 	}
 
 	// used when a new group is created so the player knows what their group ID is for sharing.

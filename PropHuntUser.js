@@ -91,6 +91,12 @@ class PropHuntUser {
 			}
 		}
 	}
+
+	// update their last active time for use in the gametick (log out a user if they're inactive)
+	// TODO: we could probably just tie this with the runescape's login/logout events and forget about logging times entirely 
+	notify() {
+		this.active = Util.currentTime();
+	}
 }
 
 module.exports = PropHuntUser;

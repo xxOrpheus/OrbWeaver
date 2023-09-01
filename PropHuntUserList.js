@@ -6,9 +6,10 @@ const PropHuntUser = require("./PropHuntUser.js");
 
 class PropHuntUserList {
 	users = [];
-	uuidMap = {};
-	regionMap = {};
-	needsUpdate = [];
+	uuidMap = {}; // a list of uuids to usernames
+	regionMap = {}; // a list of regions with users inside them
+	needsUpdate = []; // a list of users by uuid that need to be updated for a new region
+	usersOnline = []; // list of usernames that are online
 	server = null;
 
 	constructor(server) {
@@ -16,6 +17,8 @@ class PropHuntUserList {
 		this.nextId = 0;
 		this.uuidMap = {};
 		this.recycledIDs = [];
+		this.usersOnline = [];
+		this.users = [];
 	}
 
 	async login(message, offset, remote, token) {
@@ -27,17 +30,29 @@ class PropHuntUserList {
 			if (loginDetails.data.length >= size) {
 				const username = loginDetails.data[0].toLowerCase().trim();
 				const password = loginDetails.data[1];
-				// do not try to login if they're already logged in
+				// do not try to make a new login if they're already logged in, revalidate previous session.
+				// TODO: previous sessions must hold priority if they are still active, they can't be overidden by the new one.
 				const playerOnline = this.playerOnline(username);
-				if (playerOnline) {
-					await Util.verifyPasscode(playerOnline.password, password).then((result) => {
-						// try to verify the users previous session
-						if (result == false) {
-							this.server.sendError(Errors.Error.INVALID_PASSWORD, remote);
-						} else {
-							this.sendJWT(playerOnline.jwt, remote, server);
-						}
-					});
+				if (playerOnline != false) {
+					await Util.verifyPasscode(playerOnline.password, password).then(
+						function (result) {
+							if (result == false) {
+								this.server.sendError(Errors.Error.INVALID_PASSWORD, remote);
+							} else {
+								if (this.server.verifyJWT(token)?.id == playerOnline.id) {
+									// not sure if this matters but it won't hurt
+									this.users[playerOnline.id].remote = remote;
+									// if they're in a group they should receive the group info again
+									if (playerOnline.groupId != null) {
+										this.server.groups.sendUserList(remote, playerOnline.groupId);
+										this.server.groups.sendGroupInfo(remote, playerOnline.groupId);
+									}
+								} else {
+									this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
+								}
+							}
+						}.bind(this)
+					);
 				} // make sure it is a valid name first
 				else if (Util.isValidName(username)) {
 					const worldNumber = message.readUInt16BE(offset);
@@ -55,6 +70,7 @@ class PropHuntUserList {
 						this.uuidMap[numericId] = userId;
 						this.users[userId] = user;
 						this.users[userId].remote = remote;
+						this.usersOnline[username] = userId;
 
 						await this.users[userId].setPassword(password).then((result) => {
 							this.users[userId].jwt = this.server.getJWT().sign({ id: userId }, Config.JWT_SECRET_KEY);
@@ -77,26 +93,28 @@ class PropHuntUserList {
 
 	logout(message, offset, remote, token) {
 		const verify = Util.verifyJWT(token);
-		if (verify.id) {
+		if (verify?.id) {
 			const userId = verify.id;
-			if (this.server.users.users[userId]?.numericId > -1) {
-				const numericId = this.server.users.users[userId].numericId;
+			if (this.users[userId]?.numericId > -1) {
+				const numericId = this.users[userId].numericId;
 				// delete the numeric id so it can be reused in the recycler
 				delete this.uuidMap[numericId];
 				this.recycledIDs.push(numericId);
-				delete this.server.users.users[userId];
 			}
+			const regionId = this.users[userId].regionId;
+			delete this.regionMap[regionId][userId];
+			delete this.usersOnline[username];
+			delete this.users[userId];
 		}
 	}
 
 	playerOnline(username) {
 		username = username.toLowerCase().trim();
-		for (const u in this.users) {
-			if (this.users[u].username && this.users[u].username == username) {
-				return this.users[u];
-			}
+		if (!!this.usersOnline[username] && this.users[this.usersOnline[username]]) {
+			return this.users[this.usersOnline[username]];
+		} else {
+			return false;
 		}
-		return false;
 	}
 
 	sendJWT(jwt, remote) {

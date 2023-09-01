@@ -16,14 +16,14 @@ const Errors = require("./Errors.js");
 // BEGIN USER_LOGIN
 
 // END USER_LOGIN
-login("booooty", "password", 420);
 //const location = Util.worldPoint(1234,5678,9012);
 //const masked = Util.maskLocation(location, 512);
 //const unmasked = Util.unmaskLocation(masked);
 
 //console.log(unmasked);
-let jwt;
+let jwt = "unauthorized";
 let groupId;
+login("booooty", "password", 420);
 client.on("message", function (message, remote) {
 	let offset = 0;
 	const action = message.readUInt8(0);
@@ -43,7 +43,6 @@ client.on("message", function (message, remote) {
 		createGroup(jwt);
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
 		//joinGroup(jwt, "bac37511-95cc-4de4-b62f-0d01ca99de70");
-		console.log(`my jwt${jwt}`);
 		updateLocation(1234, 3456, 1, 512);
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
@@ -67,7 +66,7 @@ client.on("message", function (message, remote) {
 });
 
 function login(username, password, world) {
-	const packet = createPacket(Packets.Packet.USER_LOGIN, "unauthorized");
+	const packet = createPacket(Packets.Packet.USER_LOGIN, jwt);
 	username = Buffer.from(username, "utf8");
 	password = Buffer.from(password, "utf8");
 	const sizeBuffer = Buffer.from([username.length, password.length]);
