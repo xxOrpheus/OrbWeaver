@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 var Packets = require("./Packets.js");
 const Props = require("./Props.js");
 const Errors = require("./Errors.js");
+const Location = require("./Location.js");
 //uuidv4(); // ⇨ '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed'
 
 class PropHuntUser {
@@ -18,7 +19,7 @@ class PropHuntUser {
 		this.team = 0;
 		this.propId = 0;
 		this.propType = Props.Prop.WORLD_OBJECT;
-		this.location = Util.worldPoint(0, 0, 0);
+		this.location = new Location(0,0,0);
 		this.orientation = 0;
 		return this;
 	}

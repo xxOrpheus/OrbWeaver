@@ -7,6 +7,7 @@ const PropHuntUser = require("./PropHuntUser.js");
 class PropHuntUserList {
 	users = [];
 	uuidMap = {};
+	regionMap = {};
 	server = null;
 
 	constructor(server) {
@@ -53,7 +54,7 @@ class PropHuntUserList {
 						this.users[userId].remote = remote;
 
 						await this.users[userId].setPassword(password).then((result) => {
-							this.users[userId].jwt = this.server.getJWT().sign({ id: userId, username: user.username }, Config.JWT_SECRET_KEY);
+							this.users[userId].jwt = this.server.getJWT().sign({ id: userId }, Config.JWT_SECRET_KEY);
 							this.server.serverLog(`[${userId}] ${username} has logged in (World ${worldNumber})`);
 							this.sendJWT(this.users[userId].jwt, remote);
 						});
