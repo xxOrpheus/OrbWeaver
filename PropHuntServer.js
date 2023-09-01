@@ -44,7 +44,7 @@ class PropHuntServer {
 				this.serverLog("\x1b[31mMalformed packet: Insufficient data length");
 				return;
 			}
-
+			// TODO: throttle/rate limit packets
 			let offset = 0;
 
 			const action = message.readUInt8(0);
@@ -75,11 +75,11 @@ class PropHuntServer {
 							break;
 
 						case Packets.Packet.GROUP_JOIN:
-							this.users.users[user.id].joinGroup(message, offset, remote, token);
+							this.users.users[user.id].joinGroup(this, message, offset, remote, token);
 							break;
 
 						case Packets.Packet.GROUP_LEAVE:
-							this.users.users[user.id].leaveGroup(message, offset, remote, token);
+							this.users.users[user.id].leaveGroup(this, message, offset, remote, token);
 							break;
 
 						case Packets.Packet.PLAYER_UPDATE:

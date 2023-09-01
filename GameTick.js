@@ -1,5 +1,3 @@
-const Util = require("./Util.js");
-const Location = require("./Location.js");
 const Packets = require("./Packets.js");
 
 class GameTick {
@@ -16,16 +14,16 @@ class GameTick {
 
 	startTick() {
 		this.tick = setInterval(() => {
-			// if a player enters a new region, they need to receive all player's data as they will have no prior knowledge 
-			// TODO: these variable names are confusing me i am half cut let's fix it later 
+			// if a player enters a new region, they need to receive all player's data as they will have no prior knowledge
+			// TODO: these variable names are confusing me i am half cut let's fix it later
 			for (const needsUpdateUserId in this.server.users.needsUpdate) {
 				const needsUpdateUser = this.server.users.users[needsUpdateUserId];
 				const needsUpdateRegionId = needsUpdateUser.regionId;
-				for(const usersInNeedRegionId in this.server.users.regionMap[needsUpdateRegionId]) {
+				for (const usersInNeedRegionId in this.server.users.regionMap[needsUpdateRegionId]) {
 					const userNeed = this.server.users.users[usersInNeedRegionId];
-					// check that it's not the user requesting updates first 
-					if(userNeed.id != needsUpdateUserId) {
-						// update logic 
+					// check that it's not the user requesting updates first
+					if (userNeed.id != needsUpdateUserId) {
+						// update logic
 					}
 				}
 				delete this.server.users.needsUpdate[needsUpdateUserId];
@@ -43,7 +41,6 @@ class GameTick {
 						for (const receiveUpdateUser in regionUsers) {
 							const receiveUpdateUserObj = this.server.users.users[receiveUpdateUser];
 							if (updateUserObj.id != receiveUpdateUserObj.id) {
-								// TODO: if a new player enters the region, we will need to request updates for all players.. hmm...
 								this.server.groups.sendPlayerUpdate(receiveUpdateUserObj.remote, updateUserObj.groupId, updateUserId, updateType);
 							}
 						}
@@ -65,7 +62,7 @@ class GameTick {
 		}
 	}
 
-	// TODO: sanity checks (verify player movement, throttling/rate limiting, etc);
+	// TODO: sanity checks (verify player movement, etc);
 	enqueueUpdate(message, offset, remote, token) {
 		// handles back end logic for the actual player updating, and subsequently enqueues the data to be pushed to other players
 
@@ -94,12 +91,21 @@ class GameTick {
 					location.setAbsY(y);
 					location.setZ(z);
 					const regionId = location.getPaletteId();
+					// if the region hasn't been entered before we need to instantiate a new array before we can populate it
+					if (!this.server.users.regionMap[regionId]) {
+						this.server.users.regionMap[regionId] = [];
+					}
 					if (user.regionId != regionId) {
 						// we must remove them from their previous region mapping
-						delete this.server.users.regionMap[this.server.users.users[user.id].regionId][user.id];
+						let oldRegion = this.server.users.users[user.id].regionId;
+						delete this.server.users.regionMap[oldRegion][user.id];
+						// we can remove the region mapping if there is no one in it
+						if (this.server.users.regionMap[oldRegion].length < 1) {
+							delete this.server.users.regionMap[oldRegion];
+						}
 						// assign the new region id and add them to the region map, add them to the list of users that need a full update
 						this.server.users.users[user.id].regionId = regionId;
-						this.server.users.regionMap[regionId] = user.id;
+						this.server.users.regionMap[regionId].push(user.id);
 						this.server.users.needsUpdate.push(user.id);
 					}
 					this.server.users.users[user.id].location = location;

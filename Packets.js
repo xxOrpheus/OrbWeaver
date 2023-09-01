@@ -17,10 +17,8 @@ const Packets = [
 	"GROUP_START_GAME", // TODO: Start the game
 	"GROUP_END_GAME", // TODO: End the game
 	"GROUP_SET_STAGE", // TODO: Set the play area
-	"GROUP_NOTIFY", // TODO: Periodically update the group's last active time (likely based off of setting updates or a player update)
 	"PLAYER_LIST",
 	"PLAYER_UPDATE", // all update_ packets are sent with player_update packet
-	"PLAYER_NOTIFY", // TODO: Periodically update the player's last active time
 
 	"ERROR_MESSAGE",
 ];

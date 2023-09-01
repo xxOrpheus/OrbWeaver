@@ -88,20 +88,6 @@ class PropHuntUser {
 			}
 		}
 	}
-
-	setProp(server, message, offset, remote) {
-		const propType = message.readUInt8(offset);
-		offset++;
-		const propId = message.readUInt16BE(offset);
-		offset += 2;
-
-		if (propType == Props.Prop.WORLD_OBJECT || propType == Props.Prop.NPC) {
-			this.propType = propType;
-			this.propId = propId;
-		} else {
-			server.sendError(Errors.Error.INVALID_PROP_TYPE, remote);
-		}
-	}
 }
 
 module.exports = PropHuntUser;
