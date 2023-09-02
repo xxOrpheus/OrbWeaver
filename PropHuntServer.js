@@ -12,7 +12,7 @@ class PropHuntServer {
 	// TODO: Implement AES encryption or some other standard
 	packetTimes = new Map();
 
-	#server;
+	server;
 	users;
 	groups;
 

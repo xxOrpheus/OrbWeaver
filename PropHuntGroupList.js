@@ -74,8 +74,8 @@ class PropHuntGroupList {
 		}
 	}
 
-	
 	// called from GameTick where each update is added to a queue sorted by ingame world region, or all updates as a whole if a new player enters the region
+	// TODO: updates should probably be modular, i.e. new file struture: Packets/UPDATE_LOCATION.js or similar to avoid spaghetti and improve readability
 	sendPlayerUpdate(remote, groupId, updateUserId, updateType) {
 		// packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID UPDATE_DATA...
 		const updatePacket = this.server.createPacket(Packets.Packet.PLAYER_UPDATE);
@@ -103,6 +103,8 @@ class PropHuntGroupList {
 			case Packets.Packet.UPDATE_PROP:
 				let updatePropId = updateUser.propId;
 				let updatePropType = updateUser.propType;
+				let propUpdateBuffer = Buffer.alloc(2 + 1); // 2 bytes for id (uint16) and 1 for type (uint8);
+				updatePacket.push(propUpdateBuffer);
 				break;
 
 			case Packets.Packet.UPDATE_TEAM:
@@ -115,19 +117,33 @@ class PropHuntGroupList {
 		}
 		this.server.sendPacket(updatePacket, remote);
 	}
-	
+
 	// sends the group player list
 	sendUserList(remote, groupId) {
 		const packet = this.server.createPacket(Packets.Packet.PLAYER_LIST);
 		const groupUsers = this.groups[groupId].users;
-		for (const u in groupUsers) {
-			const groupUser = this.server.users.users[u];
-			const userBuffer = Buffer.alloc(2 + 1 + groupUser.username.length); // 2 for uint16 (user id) 1 for uint8 (username length) and the rest is the username itself
-			userBuffer.writeUInt16BE(groupUser.numericId);
-			userBuffer.writeUInt8(groupUser.username.length);
-			userBuffer.write(groupUser.username);
-			packet.push(userBuffer);
+
+		// calculate the total size needed for the buffer
+		let totalSize = 0;
+		for (const groupUser of groupUsers) {
+			totalSize += 3 + groupUser.username.length; // allocate 2 bytes (uint16) + 1 bytes (uint8) + username length
 		}
+		// allocate the entire buffer
+		const userBuffer = Buffer.alloc(totalSize);
+
+		let offset = 0;
+		for (const groupUser of groupUsers) {
+			userBuffer.writeUInt16BE(groupUser.numericId, offset);
+			offset += 2;
+
+			const usernameLength = groupUser.username.length;
+			userBuffer.writeUInt8(usernameLength, offset);
+			offset++;
+
+			userBuffer.write(groupUser.username, offset, usernameLength);
+			offset += usernameLength;
+		}
+		packet.push(userBuffer);
 		this.server.sendPacket(packet, remote);
 	}
 

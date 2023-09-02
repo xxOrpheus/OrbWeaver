@@ -1,4 +1,5 @@
 const Packets = require("./Packets.js");
+const Errors = require("./Errors.js");
 
 class GameTick {
 	tick = null;
@@ -23,8 +24,9 @@ class GameTick {
 					const userRegionId = userToUpdate.regionId;
 					for (const userIdInSameRegion in this.server.users.regionMap[userRegionId]) {
 						const userInSameRegion = this.server.users.users[this.server.users.regionMap[userRegionId][userIdInSameRegion]];
-						if (userInSameRegion.id !== userToUpdateId) {
+						if (userInSameRegion.id !== userToUpdateId) { // TODO: update new users in the region
 							// update logic
+							// maybe just this.enqueueUpdate for all update types for each user in the region? sounds pretty crazy though 
 						}
 					}
 					delete this.server.users.needsUpdate[userIdToUpdate];
@@ -69,6 +71,7 @@ class GameTick {
 	}
 
 	// TODO: sanity checks (verify player movement, etc);
+	// TODO: updates should probably be modular to avoid spaghetti and improve code readability / management
 	enqueueUpdate(message, offset, remote, token) {
 		// handles back end logic for the actual player updating, and subsequently enqueues the data to be pushed to other players
 
@@ -120,8 +123,19 @@ class GameTick {
 					break;
 
 				case Packets.PlayerUpdate.PROP:
+					const propId = message.readUInt16BE(offset);
+					offset += 2;
+					const propType = message.readUInt8(offset);
+					offset++;
+					if (propId < 0 || propId > 65535) {
+						this.server.sendError(Errors.Error.INVALID_PROP, remote);
+					} else {
+						this.server.users.users[user.id].propId = propId;
+						this.server.users.users[user.id].propType = propType == 0 ? 0 : 1;
+					}
 					break;
 
+				// teams will probably be assigned by the server so we likely won't need this 
 				case Packets.PlayerUpdate.TEAM:
 					break;
 			}
