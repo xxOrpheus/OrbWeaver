@@ -89,9 +89,6 @@ class GameTick {
 			const updateType = message.readUInt8(offset);
 			offset++;
 			user = this.server.users.users[user.id];
-			if (!this.updateQueue[updateType]) {
-				this.updateQueue[updateType] = [];
-			}
 			if (this.updateQueue[updateType][user.id]) {
 				delete this.updateQueue[updateType][user.id]; // if there are previous updates queued we can safely remove them. (e.g. location updates would stack very fast but we only need the most recent one)
 			}
@@ -129,7 +126,7 @@ class GameTick {
 						this.server.users.users[user.id].regionId = regionId;
 						this.server.users.users[user.id].orientation = orientation;
 						this.server.users.regionMap[regionId].push(user.id);
-						this.server.users.needsUpdate.push(user.id);
+						this.server.users.setNeedsUpdate(user.id);
 						this.server.log(`new location: ${user.location}(${orientation}*)@region${regionId}`);
 					}
 					this.server.users.users[user.id].location = location;

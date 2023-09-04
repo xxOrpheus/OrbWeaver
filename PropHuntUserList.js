@@ -22,7 +22,7 @@ class PropHuntUserList {
 	}
 
 	setNeedsUpdate(userId) {
-		if(!this.needsUpdate[userId]) {
+		if(!this.needsUpdate[userId]) { // only need to update once per queue
 			if(!this.users[userId]) {
 				return Errors.Error.INVALID_USER_ID;
 			}
