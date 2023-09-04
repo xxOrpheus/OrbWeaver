@@ -21,6 +21,16 @@ class PropHuntUserList {
 		this.users = [];
 	}
 
+	setNeedsUpdate(userId) {
+		if(!this.needsUpdate[userId]) {
+			if(!this.users[userId]) {
+				return Errors.Error.INVALID_USER_ID;
+			}
+			this.needsUpdate.push(userId);
+		}
+		return true;
+	}
+
 	async login(message, offset, remote, token) {
 		try {
 			// TODO: I don't feel like this really belongs here but it's ok for now
@@ -38,6 +48,7 @@ class PropHuntUserList {
 						function (result) {
 							if (result == false) {
 								this.server.sendError(Errors.Error.INVALID_PASSWORD, remote);
+								return Errors.Error.INVALID_PASSWORD;
 							} else {
 								if (this.server.verifyJWT(token)?.id == playerOnline.id) {
 									// not sure if this matters but it won't hurt
@@ -49,6 +60,7 @@ class PropHuntUserList {
 									}
 								} else {
 									this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
+									return Errors.Error.INVALID_LOGIN;
 								}
 							}
 						}.bind(this)
@@ -59,6 +71,7 @@ class PropHuntUserList {
 					// we don't want a valid token as this is supposed to be a new login
 					if (this.server.verifyJWT(token)) {
 						this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
+						return Errors.Error.INVALID_LOGIN;
 					} // make sure it is a valid world too
 					else if (Util.isValidWorld(worldNumber)) {
 						const user = new PropHuntUser(username, password, worldNumber);
@@ -74,20 +87,24 @@ class PropHuntUserList {
 
 						await this.users[userId].setPassword(password).then((result) => {
 							this.users[userId].jwt = this.server.getJWT().sign({ id: userId }, Config.JWT_SECRET_KEY);
-							this.server.serverLog(`[${userId}] ${username} has logged in (World ${worldNumber})`);
+							this.server.log(`[${userId}] ${username} has logged in (World ${worldNumber})`);
 							this.sendJWT(this.users[userId].jwt, remote);
 						});
 					} else {
 						this.server.sendError(Errors.Error.INVALID_WORLD, remote);
+						return Errors.Error.INVALID_WORLD;
 					}
 				} else {
-					this.server.serverLog(`invalid name ${JSON.stringify(username)}`);
+					this.server.log(`invalid name ${JSON.stringify(username)}`);
 					this.server.sendError(Errors.Error.INVALID_NAME, remote);
+					return Errors.Error.INVALID_NAME;
 				}
+				// no error code was returned, we can safely do any final operations here:
 			}
 		} catch (error) {
 			this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
 			console.debug(error);
+			return Errors.Error.INVALID_LOGIN;
 		}
 	}
 
@@ -105,6 +122,70 @@ class PropHuntUserList {
 			delete this.regionMap[regionId][userId];
 			delete this.usersOnline[username];
 			delete this.users[userId];
+		}
+	}
+
+	addToGroup(message, offset, remote, token) {
+		token = this.server.verifyJWT(token);
+		const sizeBuffer = 1; //read groupId
+		const groupDetails = Packets.utf8Deserialize(message, sizeBuffer, offset, remote);
+		offset = groupDetails.offset;
+		if (!(token && groupDetails.data.length >= sizeBuffer)) {
+			return Errors.Error.INVALID_GROUP;
+		}
+		const groupId = groupDetails.data[0];
+		let authorized = true; // default true, only subject to change if group.locked == true
+		if (token?.id) {
+			if (this.server.getUsers().users[token.id]) {
+				const user = this.server.getUsers().users[token.id];
+				if (this.server.groups.groups[groupId]) {
+					// if the group is locked try to verify the password
+					if (this.server.groups.groups[groupId].locked == true) {
+						// authorize the user to join the game
+						authorized = Util.verifyPasscode(this.server.groups.groups[groupId].password, passwordInput);
+						const passwordSize = message.readUInt16BE(offset);
+						offset += 2;
+						const passwordInput = Packets.utf8Deserialize(message, passwordSize, offset, remote);
+						offset = passwordInput.offset;
+					}
+
+					if (authorized) {
+						if (this.server.groups.groups[groupId].users[user.id]) {
+							// the user is already in the group
+							this.server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
+							return Errors.Error.ALREADY_IN_GROUP;
+						} else {
+							this.server.log(`${user.username} joined group ${groupId}`);
+							this.server.groups.addUser(groupId, token.id);
+						}
+					} else {
+						this.server.sendError(Errors.Error.INVALID_PASSWORD, remote);
+						return Errors.Error.INVALID_PASSWORD;
+					}
+				} else {
+					this.server.log(`${user.username} tried joining invalid group ${Util.sanitize(groupId)}`);
+					this.server.sendError(Errors.Error.INVALID_GROUP, remote);
+					return Errors.Error.INVALID_GROUP;
+				}
+			} else {
+				this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
+				return Errors.Error.INVALID_LOGIN;
+			}
+			// no error codes returned, any final operations can be done here:
+		}
+	}
+
+	removeFromGroup(message, offset, remote, token) {
+		if (token.id && this.groupId != null) {
+			if (this.server.groups.groups[this.groupId].users[this.id]) {
+				this.server.log(`[${this.id}] ${this.username} left group ${this.groupId}`);
+				const packet = this.server.createPacket(Packets.Packet.GROUP_LEAVE);
+				this.server.sendPacket(packet, remote);
+				this.server.groups.removeUser(server, this.groupId, this.id);
+			} else {
+				// the user is not in a group
+				this.server.sendError(Errors.Error.INVALID_GROUP, remote);
+			}
 		}
 	}
 

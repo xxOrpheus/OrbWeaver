@@ -23,13 +23,13 @@ const Errors = require("./Errors.js");
 //console.log(unmasked);
 let jwt = "unauthorized";
 let groupId;
-login("booooty", "password", 420);
+login("booty", "password", 420);
 client.on("message", function (message, remote) {
 	let offset = 0;
 	const action = message.readUInt8(0);
 	console.log("Received packet data:", message.toString("utf8"));
 	if (action < 0 || action > Packets.Packet.length) {
-		this.serverLog(`\x1b[31mUnsupported packet action: ${Packets.Packets[action]}`);
+		this.log(`\x1b[31mUnsupported packet action: ${Packets.Packets[action]}`);
 		return;
 	}
 	offset++;
@@ -40,10 +40,10 @@ client.on("message", function (message, remote) {
 		const userDetails = data.data;
 
 		jwt = userDetails[0];
-		createGroup(jwt);
+		//createGroup();
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
-		//joinGroup(jwt, "bac37511-95cc-4de4-b62f-0d01ca99de70");
-		updateLocation(1234, 3456, 1, 512);
+		joinGroup("55c93723-4f87-4315-86df-a90abe7728bf");
+		updateLocation(3456, 5678, 1, 1024);
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		data = message.readUint16BE(offset);
@@ -76,7 +76,7 @@ function login(username, password, world) {
 	sendPacket(packet);
 }
 
-function createGroup(jwt) {
+function createGroup() {
 	const packet = createPacket(Packets.Packet.GROUP_NEW, jwt);
 	sendPacket(packet);
 	console.log("createGroup called");
@@ -92,7 +92,7 @@ function setProp(jwt, propType, propId) {
 	sendPacket(packet);
 }
 
-function joinGroup(jwt, groupId) {
+function joinGroup(groupId) {
 	const packet = createPacket(Packets.Packet.GROUP_JOIN, jwt);
 	groupId = Buffer.from(groupId, "utf8");
 	const gidSize = Buffer.from([groupId.length]);

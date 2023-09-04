@@ -24,7 +24,7 @@ class PropHuntGroupList {
 					const groupId = userId; // just to improve readability lol
 					// add the creator to the list of users -- group ID is synonymous with the user ID
 					this.addUser(groupId, userId);
-					this.server.serverLog(`${users.users[userId].username} has created a group (${userId})`);
+					this.server.log(`${users.users[userId].username} has created a group (${userId})`);
 					this.sendUserList(remote, groupId, userId);
 					this.sendGroupInfo(remote, groupId);
 				} else {
@@ -46,6 +46,9 @@ class PropHuntGroupList {
 				this.server.users.users[userId].status = 0;
 				this.server.users.users[userId].team = 0;
 				this.groups[groupId].users[userId] = userId; // add the user's id to the group user list
+				this.sendGroupInfo(userId, groupId);
+				this.sendUserList(userId, groupId);
+				this.server.users.setNeedsUpdate(userId);
 			} else {
 				return Errors.Error.ALREADY_IN_GROUP;
 			}
@@ -76,17 +79,23 @@ class PropHuntGroupList {
 
 	// called from GameTick where each update is added to a queue sorted by ingame world region, or all updates as a whole if a new player enters the region
 	// TODO: updates should probably be modular, i.e. new file struture: Packets/UPDATE_LOCATION.js or similar to avoid spaghetti and improve readability
-	sendPlayerUpdate(remote, groupId, updateUserId, updateType) {
+	sendPlayerUpdate(userToReceiveUpdateId, userToUpdateId, updateType) {
 		// packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID UPDATE_DATA...
-		const updatePacket = this.server.createPacket(Packets.Packet.PLAYER_UPDATE);
-		if (!this.groups[groupId].users[updateUserId]) {
-			return;
+		if(!this.server.users.users[userToReceiveUpdateId] || !this.server.users.users[userToUpdateId]) {
+			console.error(`tried to update players that did not actually exist: ${userToReceiveUpdateId} & ${userToUpdateId}`);
+			return Errors.Error.INVALID_UPDATE;
 		}
-		const updateUser = this.groups[groupId].users[updateUserId];
+		if(!this.server.users.users[userToReceiveUpdateId].remote) {
+			console.error(`${userToReceiveUpdateId} did not have a socket open!`)
+			return Errors.Error.NO_CONNECTION_AVAILABLE;
+		}
+		const updatePacket = this.server.createPacket(Packets.Packet.PLAYER_UPDATE);
+		const updateUser = this.server.users.users[userToUpdateId];
 		const setup = Buffer.alloc(3); // 1 byte for update type, 2 for user ID
 		setup.writeUInt8(updateType);
 		setup.writeUInt16BE(updateUser.numericId);
 		updatePacket.push(setup);
+		console.log(`sending ${this.server.users.users[userToUpdateId].username}'s ${Packets.PlayerUpdates[updateType]} update to ${this.server.users.users[userToReceiveUpdateId].username}`)
 		switch (updateType) {
 			case Packets.Packet.UPDATE_LOCATION:
 				if (updateUser.location != null) {
@@ -115,13 +124,20 @@ class PropHuntGroupList {
 				let updateStatus = updateUser.status;
 				break;
 		}
-		this.server.sendPacket(updatePacket, remote);
+		this.server.sendPacket(updatePacket, this.server.users.users[userToReceiveUpdateId].remote);
 	}
 
 	// sends the group player list
-	sendUserList(remote, groupId) {
+	sendUserList(userId, groupId) {
+		if(!this.server.users.users[userId]?.remote) {
+			return Errors.Error.INVALID_USER_ID || Errors.Error.NO_CONNECTION_AVAILABLE;
+		}
+		if(!this.server.users.users[groupId]) {
+			return Errors.Error.INVALID_GROUP;
+		}
 		const packet = this.server.createPacket(Packets.Packet.PLAYER_LIST);
 		const groupUsers = this.groups[groupId].users;
+		const remote = this.server.users.users[userId].remote;
 
 		// calculate the total size needed for the buffer
 		let totalSize = 0;
@@ -148,10 +164,14 @@ class PropHuntGroupList {
 	}
 
 	// used when a new group is created so the player knows what their group ID is for sharing.
-	sendGroupInfo(remote, groupId) {
+	sendGroupInfo(userId, groupId) {
 		if (!this.groups[groupId]) {
 			return Errors.Error.INVALID_GROUP;
 		}
+		if(!this.server.users.users[userId]?.remote) {
+			return Errors.Error.INVALID_USER_ID || Errors.Error.NO_CONNECTION_AVAILABLE;
+		}
+		const remote = this.server.users.users[userId].remote;
 		const packet = this.server.createPacket(Packets.Packet.GROUP_INFO);
 		const group = this.groups[groupId];
 		const creator = this.server.users.users[group.creator].username;

@@ -28,7 +28,7 @@ class PropHuntServer {
 		});
 
 		this.server.on("listening", () => {
-			this.serverLog("Prop hunt server started");
+			this.log("Prop hunt server started");
 		});
 
 		this.server.bind(Config.SERVER_PORT);
@@ -41,7 +41,7 @@ class PropHuntServer {
 	#handleMessage(message, remote) {
 		try {
 			if (message.length < 3) {
-				this.serverLog("\x1b[31mMalformed packet: Insufficient data length");
+				this.log("\x1b[31mMalformed packet: Insufficient data length");
 				return;
 			}
 			// TODO: throttle/rate limit packets
@@ -49,7 +49,7 @@ class PropHuntServer {
 			
 			const opCode = message.readUInt8(0); // first byte is op code, it could probably be trimmed from the packet but we will leave it anyways 
 			if (opCode < 0 || opCode > Packets.Packet.length) {
-				this.serverLog(`\x1b[31mUnsupported packet action: ${opCode}`);
+				this.log(`\x1b[31mUnsupported packet action: ${opCode}`);
 				return;
 			}
 
@@ -75,11 +75,11 @@ class PropHuntServer {
 							break;
 
 						case Packets.Packet.GROUP_JOIN:
-							this.users.users[user.id].joinGroup(this, message, offset, remote, token);
+							this.users.addToGroup(message, offset, remote, token);
 							break;
 
 						case Packets.Packet.GROUP_LEAVE:
-							this.users.users[user.id].leaveGroup(this, message, offset, remote, token);
+							this.users.removeFromGroup(message, offset, remote, token);
 							break;
 
 						case Packets.Packet.PLAYER_UPDATE:
@@ -127,7 +127,7 @@ class PropHuntServer {
 		console.debug(error);
 	}
 
-	serverLog(message) {
+	log(message) {
 		const address = this.server.address();
 		console.log(`[\x1b[34m${address.address}\x1b[39m:\x1b[37m${address.port}\x1b[39m]: \x1b[32m${message}\x1b[39m`);
 	}
