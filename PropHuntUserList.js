@@ -22,8 +22,9 @@ class PropHuntUserList {
 	}
 
 	setNeedsUpdate(userId) {
-		if(!this.needsUpdate[userId]) { // only need to update once per queue
-			if(!this.users[userId]) {
+		if (!this.needsUpdate[userId]) {
+			// only need to update once per queue
+			if (!this.users[userId]) {
 				return Errors.Error.INVALID_USER_ID;
 			}
 			this.needsUpdate.push(userId);
@@ -44,10 +45,11 @@ class PropHuntUserList {
 				// TODO: previous sessions must hold priority if they are still active, they can't be overidden by the new one.
 				const playerOnline = this.playerOnline(username);
 				if (playerOnline != false) {
-					await Util.verifyPasscode(playerOnline.password, password).then(
+					return await Util.verifyPasscode(playerOnline.password, password).then(
 						function (result) {
 							if (result == false) {
 								this.server.sendError(Errors.Error.INVALID_PASSWORD, remote);
+								this.server.debug("invalid password");
 								return Errors.Error.INVALID_PASSWORD;
 							} else {
 								if (this.server.verifyJWT(token)?.id == playerOnline.id) {
@@ -60,6 +62,7 @@ class PropHuntUserList {
 									}
 								} else {
 									this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
+									this.server.debug("invalid login (jwt)");
 									return Errors.Error.INVALID_LOGIN;
 								}
 							}
@@ -109,17 +112,26 @@ class PropHuntUserList {
 	}
 
 	logout(message, offset, remote, token) {
-		const verify = Util.verifyJWT(token);
+		const verify = this.server.verifyJWT(token);
 		if (verify?.id) {
 			const userId = verify.id;
-			if (this.users[userId]?.numericId > -1) {
+			if (!this.users[userId]) {
+				this.server.debug("a user tried logging out but was never logged in!");
+				return Errors.Error.INVALID_LOGIN;
+			}
+			if (this.users[userId].numericId > -1) {
 				const numericId = this.users[userId].numericId;
 				// delete the numeric id so it can be reused in the recycler
 				delete this.uuidMap[numericId];
 				this.recycledIDs.push(numericId);
 			}
-			const regionId = this.users[userId].regionId;
-			delete this.regionMap[regionId][userId];
+			if (this.users[userId].regionId) {
+				const regionId = this.users[userId].regionId;
+				if (this.regionMap[regionId]?.[userId]) {
+					delete this.regionMap[regionId][userId];
+				}
+			}
+			let username = this.users[userId].username;
 			delete this.usersOnline[username];
 			delete this.users[userId];
 		}
@@ -176,16 +188,23 @@ class PropHuntUserList {
 	}
 
 	removeFromGroup(message, offset, remote, token) {
-		if (token.id && this.groupId != null) {
-			if (this.server.groups.groups[this.groupId].users[this.id]) {
-				this.server.log(`[${this.id}] ${this.username} left group ${this.groupId}`);
+		this.server.debug(token.id);
+		if (token.id && this.users[token.id]?.groupId) {
+			let user = this.users[token.id];
+			let groupId = user.groupId;
+			if (this.server.groups.groups[groupId].users[token.id]) {
+				this.server.log(`[${id}] ${username} left group ${groupId}`);
+				this.server.groups.removeUser(server, groupId, token.id);
 				const packet = this.server.createPacket(Packets.Packet.GROUP_LEAVE);
 				this.server.sendPacket(packet, remote);
-				this.server.groups.removeUser(server, this.groupId, this.id);
 			} else {
 				// the user is not in a group
-				this.server.sendError(Errors.Error.INVALID_GROUP, remote);
+				this.server.sendError(Errors.Error.INVALID_GROUP, user.remote);
+				return Errors.Error.INVALID_GROUP;
 			}
+		} else { // we can still tell their gui to update incase something weird happened
+			const packet = this.server.createPacket(Packets.Packet.GROUP_LEAVE);
+			this.server.sendPacket(packet, remote);
 		}
 	}
 

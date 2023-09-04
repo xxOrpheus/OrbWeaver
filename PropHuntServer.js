@@ -5,6 +5,7 @@ const GameTick = require("./GameTick.js");
 const dgram = require("dgram");
 const Config = require("./Config.js");
 const Packets = require("./Packets.js");
+const Errors = require("./Errors.js");
 
 const JWT = require("jsonwebtoken");
 
@@ -24,11 +25,11 @@ class PropHuntServer {
 		});
 
 		this.server.on("message", (message, remote) => {
-			this.#handleMessage(message, remote);
+			this.handleMessage(message, remote);
 		});
 
 		this.server.on("listening", () => {
-			this.server.debug("Prop hunt server started");
+			this.log("Prop hunt server started");
 		});
 
 		this.server.bind(Config.SERVER_PORT);
@@ -38,10 +39,10 @@ class PropHuntServer {
 		this.gametick = new GameTick(this);
 	}
 
-	#handleMessage(message, remote) {
+	async handleMessage(message, remote) {
 		try {
 			if (message.length < 3) {
-				this.server.debug("\x1b[31mMalformed packet: Insufficient data length");
+				this.debug("\x1b[31mMalformed packet: Insufficient data length");
 				return;
 			}
 			// TODO: throttle/rate limit packets
@@ -54,16 +55,22 @@ class PropHuntServer {
 			}
 
 			offset++;
-
+			console.log("opcode " + opCode);
+			console.log("data " + message);
 			let token = Packets.utf8Deserialize(message, 1, offset, remote); // the next part is the (token size+)JWT token, might not be signed so we handle that in the following calls 
 			if (token.data.length > 0) {
 				offset = token.offset;
 				token = token.data[0];
-				let user;
 				if (Packets.Packets[opCode] != null) {
 					switch (opCode) {
 						case Packets.Packet.USER_LOGIN:
-							this.users.login(message, offset, remote, token);
+							await this.users.login(message, offset, remote, token).then((res) => {
+								console.log(res);
+							});
+							//if(Errors.Errors[returnValue]) {
+							//	console.log("error: ",Errors.Error[returnValue]);
+							//}
+							//console.log(returnValue);
 							break;
 
 						case Packets.Packet.USER_LOGOUT:
@@ -89,7 +96,8 @@ class PropHuntServer {
 				}
 			}
 		} catch (error) {
-			console.debug(error);
+			this.debug(error);
+			console.error(error);
 			// this.handleError ?
 		}
 	}
@@ -124,7 +132,7 @@ class PropHuntServer {
 
 	#handleError(error) {
 		// i can fix her
-		console.debug(error);
+		this.debug(error);
 	}
 
 	log(message) {
