@@ -57,8 +57,8 @@ class PropHuntUserList {
 									this.users[playerOnline.id].remote = remote;
 									// if they're in a group they should receive the group info again
 									if (playerOnline.groupId != null) {
-										this.server.groups.sendUserList(remote, playerOnline.groupId);
-										this.server.groups.sendGroupInfo(remote, playerOnline.groupId);
+										this.server.groups.sendUserList(playerOnline.id, playerOnline.groupId);
+										this.server.groups.sendGroupInfo(playerOnline.id, playerOnline.groupId);
 									}
 								} else {
 									this.server.sendError(Errors.Error.INVALID_LOGIN, remote);

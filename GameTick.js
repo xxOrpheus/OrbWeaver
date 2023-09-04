@@ -1,5 +1,6 @@
 const Packets = require("./Packets.js");
 const Errors = require("./Errors.js");
+const Location = require("./Location.js");
 
 class GameTick {
 	tick = null;
@@ -31,18 +32,21 @@ class GameTick {
 			const userToUpdate = this.server.users.users[userToUpdateId];
 			const userRegionId = userToUpdate.regionId;
 			for (const userIdInSameRegion in this.server.users.regionMap[userRegionId]) {
+				let userInSameRegionId = this.server.users.regionMap[userRegionId][userIdInSameRegion];
 				// make sure the user still exists, if they don't they should be removed from the regionMap
-				if (!this.server.users.users[this.server.users.regionMap[userRegionId][userIdInSameRegion]]) {
-					delete this.server.users.regionMap[userRegionId][userIdInSameRegion];
+				if (!this.server.users.users[userInSameRegionId]) {
+					delete this.server.users.regionMap[userRegionId][userInSameRegionId];
 					continue;
 				}
-				const userInSameRegion = this.server.users.users[this.server.users.regionMap[userRegionId][userIdInSameRegion]];
-				if (userInSameRegion.id !== userToUpdateId) {
+				
+				if (userInSameRegionId !== userToUpdateId) {
 					//this.server.debug(`${userToUpdate.username} should receive ${userInSameRegion.username}'s updates`);
+					//const userInSameRegion = this.server.users.users[];
 
 					// i guess we actually only need the prop and location to be updated, the rest only the server needs to know
-					this.updateQueue[Packets.PlayerUpdate.LOCATION].push(userIdInSameRegion);
-					this.updateQueue[Packets.PlayerUpdate.PROP].push(userIdInSameRegion);
+					//console.log("someone needed an update: " + userInSameRegionId + " " + userToUpdateId);
+					this.updateQueue[Packets.PlayerUpdate.LOCATION].push(userInSameRegionId);
+					this.updateQueue[Packets.PlayerUpdate.PROP].push(userInSameRegionId);
 				}
 			}
 		}
@@ -63,7 +67,7 @@ class GameTick {
 					userToUpdate.notify(); // set their last active time
 					/// We only need to update users in the same region
 					for (const userToReceiveUpdateId of regionUsersMap) {
-						if(userToUpdate.groupId.length > 0 && this.server.groups.groups[groupId]) {
+						if (userToUpdate.groupId.length > 0 && this.server.groups.groups[userToUpdate.groupId]) {
 							if (userToReceiveUpdateId !== userToUpdateId && !!this.server.users.users[userToReceiveUpdateId] && userToUpdate.groupId === this.server.users.users[userToReceiveUpdateId].groupId) {
 								this.server.groups.sendPlayerUpdate(userToReceiveUpdateId, userToUpdateId, updateType);
 							}
@@ -96,13 +100,13 @@ class GameTick {
 		// packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID<omitted when receiving an update, only used for sending updates> UPDATE_DATA...
 		let user = this.server.verifyJWT(token);
 		if (user?.id && this.server.users.users[user.id]) {
-			console.log("message: " + message.toString());
+			/*console.log("message: " + message.toString());
 			console.log("message length: " + message.length);
-			console.log("offset: " + offset);
+			console.log("offset: " + offset);*/
 			if (offset < message.length) {
 				// offset cant be longer than the length or something is seriously fucked up
 				const updateType = message.readUInt8(offset);
-				console.log("update: " + updateType);
+				//console.log("update: " + updateType);
 				offset++;
 				user = this.server.users.users[user.id];
 				if (this.updateQueue[updateType]?.[user.id]) {
@@ -118,11 +122,8 @@ class GameTick {
 						offset++;
 						const orientation = message.readUInt16BE(offset);
 						offset += 2;
-						const location = user.location;
-						location.setAbsX(x);
-						location.setAbsY(y);
-						location.setZ(z);
-						const regionId = location.getPaletteId(0, 0);
+						const location = new Location(x, y, z);
+						const regionId = location.getRegionId();
 						// if the region hasn't been entered before we need to instantiate a new array before we can populate it
 						if (!this.server.users.regionMap[regionId]) {
 							this.server.users.regionMap[regionId] = [];
@@ -143,12 +144,12 @@ class GameTick {
 							this.server.users.regionMap[regionId].push(user.id);
 							// they're in a new region so they need to receive the updated player list
 							if (!!user.groupId) {
-								this.server.groups.groups[user.groupId].sendUserList(user.id, user.groupId);
+								this.server.groups.sendUserList(user.id, user.groupId);
 							}
 							this.server.users.setNeedsUpdate(user.id);
 						}
 						this.server.users.users[user.id].location = location;
-						this.server.debug(`${user.username} new location: ${location}`);
+						//this.server.debug(`${user.username} new location: ${location}`);
 						break;
 
 					case Packets.PlayerUpdate.PROP:

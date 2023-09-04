@@ -25,8 +25,8 @@ class PropHuntGroupList {
 					// add the creator to the list of users -- group ID is synonymous with the user ID
 					this.addUser(groupId, userId);
 					this.server.log(`${users.users[userId].username} has created a group (${userId})`);
-					this.sendUserList(remote, groupId, userId);
-					this.sendGroupInfo(remote, groupId);
+					this.sendUserList(userId, groupId, userId);
+					this.sendGroupInfo(userId, groupId);
 				} else {
 					this.server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
 				}
@@ -45,7 +45,7 @@ class PropHuntGroupList {
 				this.server.users.users[userId].groupId = groupId;
 				this.server.users.users[userId].status = 0;
 				this.server.users.users[userId].team = 0;
-				this.groups[groupId].users[userId] = userId; // add the user's id to the group user list
+				this.groups[groupId].users.push(userId); // add the user's id to the group user list
 				this.sendGroupInfo(userId, groupId);
 				this.sendUserList(userId, groupId);
 				this.server.users.setNeedsUpdate(userId);
@@ -140,10 +140,11 @@ class PropHuntGroupList {
 		const packet = this.server.createPacket(Packets.Packet.PLAYER_LIST);
 		const groupUsers = this.groups[groupId].users;
 		const remote = this.server.users.users[userId].remote;
-
 		// calculate the total size needed for the buffer
 		let totalSize = 0;
-		for (const groupUser of groupUsers) {
+		for (const groupUserId of groupUsers) {
+			console.log("groupUser",groupUserId)
+			let groupUser = this.server.users.users[groupUserId];
 			totalSize += 3 + groupUser.username.length; // allocate 2 bytes (uint16) + 1 bytes (uint8) + username length
 		}
 		// allocate the entire buffer
@@ -151,6 +152,7 @@ class PropHuntGroupList {
 
 		let offset = 0;
 		for (const groupUserId of groupUsers) {
+			console.log("groupUserId",groupUserId);
 			// if the user doesn't exist or they don't have any location data that sucks
 			if(!this.server.users.users[groupUserId]?.regionId) {
 				continue;

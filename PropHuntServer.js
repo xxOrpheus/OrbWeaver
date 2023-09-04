@@ -55,8 +55,8 @@ class PropHuntServer {
 			}
 
 			offset++;
-			console.log("opcode " + opCode);
-			console.log("data " + message);
+			//console.log("opcode " + opCode);
+			//console.log("data " + message);
 			let token = Packets.utf8Deserialize(message, 1, offset, remote); // the next part is the (token size+)JWT token, might not be signed so we handle that in the following calls 
 			if (token.data.length > 0) {
 				offset = token.offset;
@@ -65,7 +65,7 @@ class PropHuntServer {
 					switch (opCode) {
 						case Packets.Packet.USER_LOGIN:
 							await this.users.login(message, offset, remote, token).then((res) => {
-								console.log(res);
+								//console.log(res);
 							});
 							//if(Errors.Errors[returnValue]) {
 							//	console.log("error: ",Errors.Error[returnValue]);
