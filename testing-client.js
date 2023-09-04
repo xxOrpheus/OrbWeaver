@@ -23,7 +23,7 @@ const Errors = require("./Errors.js");
 //console.log(unmasked);
 let jwt = "unauthorized";
 let groupId;
-login("booty", "password", 420);
+login("boty", "password", 420);
 client.on("message", function (message, remote) {
 	let offset = 0;
 	const action = message.readUInt8(0);
@@ -42,7 +42,7 @@ client.on("message", function (message, remote) {
 		jwt = userDetails[0];
 		//createGroup();
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
-		joinGroup("55c93723-4f87-4315-86df-a90abe7728bf");
+		joinGroup("44e77bef-d00e-44ec-b3e9-0a069be1a5ce");
 		updateLocation(3456, 5678, 1, 1024);
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
@@ -51,9 +51,30 @@ client.on("message", function (message, remote) {
 			console.log(`ERROR RECV: ${Errors.Errors[data]}`);
 		}
 	} else if (action == Packets.Packet.PLAYER_UPDATE) {
-
+		let updateType = message.readUInt8(offset);
+		offset ++;
+		if(updateType == 0) {
+			let x = message.readUInt16BE(offset);
+			offset += 2;
+			let y = message.readUInt16BE(offset);
+			offset += 2;
+			let z = message.readUInt8(offset);
+			offset++;
+			let orientation = message.readUInt16BE(offset);
+		}
 	} else if (action == Packets.Packet.PLAYER_LIST) {
-
+		let length = message.readUInt16BE(offset);
+		console.log("length: " + length);
+		offset += 2;
+		while(offset < message.length) {
+			let userId = message.readUInt16BE(offset);
+			offset += 2;
+			let usernameLength = message.readUInt8(offset);
+			offset++;
+			let username = message.toString("utf8", offset, offset + usernameLength);
+			offset += usernameLength;
+			console.log("user", userId, usernameLength, username);
+		}
 	} else if (action == Packets.Packet.GROUP_INFO) {
 		groupId = message.readUInt16BE(offset);
 		offset += 2;

@@ -4,7 +4,8 @@ const Location = require("./Location.js");
 
 class GameTick {
 	tick = null;
-	freq = 600;
+	freq = 600; // ms time
+	//garbageCollectorFreq = this.freq * 500; // collect every 500 ticks (5 minutes)
 	server = null;
 	updateQueue = {};
 
@@ -18,6 +19,9 @@ class GameTick {
 		try {
 			// TODO: we could put this tick to rest when there is nothing happening (no players in games)
 			this.tick = setInterval(() => this.cycle(), this.freq);
+			//this.garbageCollector = setInterval(() => {
+			//	// do clean up 
+			//}, this.garbageCollectorFreq);
 			this.running = true;
 		} catch (error) {
 			this.server.debug(error);
@@ -143,7 +147,7 @@ class GameTick {
 							this.server.users.users[user.id].orientation = orientation;
 							this.server.users.regionMap[regionId].push(user.id);
 							// they're in a new region so they need to receive the updated player list
-							if (!!user.groupId) {
+							if (user.groupId) {
 								this.server.groups.sendUserList(user.id, user.groupId);
 							}
 							this.server.users.setNeedsUpdate(user.id);

@@ -23,10 +23,8 @@ class PropHuntGroupList {
 					this.groups[userId] = new PropHuntGroup(userId, world);
 					const groupId = userId; // just to improve readability lol
 					// add the creator to the list of users -- group ID is synonymous with the user ID
-					this.addUser(groupId, userId);
 					this.server.log(`${users.users[userId].username} has created a group (${userId})`);
-					this.sendUserList(userId, groupId, userId);
-					this.sendGroupInfo(userId, groupId);
+					this.addUser(groupId, userId);
 				} else {
 					this.server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
 				}
@@ -47,7 +45,7 @@ class PropHuntGroupList {
 				this.server.users.users[userId].team = 0;
 				this.groups[groupId].users.push(userId); // add the user's id to the group user list
 				this.sendGroupInfo(userId, groupId);
-				this.sendUserList(userId, groupId);
+				//this.sendUserList(userId, groupId);
 				this.server.users.setNeedsUpdate(userId);
 			} else {
 				return Errors.Error.ALREADY_IN_GROUP;
@@ -81,12 +79,12 @@ class PropHuntGroupList {
 	// TODO: updates should probably be modular, i.e. new file struture: Packets/UPDATE_LOCATION.js or similar to avoid spaghetti and improve readability
 	sendPlayerUpdate(userToReceiveUpdateId, userToUpdateId, updateType) {
 		// packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID UPDATE_DATA...
-		if(!this.server.users.users[userToReceiveUpdateId] || !this.server.users.users[userToUpdateId]) {
+		if (!this.server.users.users[userToReceiveUpdateId] || !this.server.users.users[userToUpdateId]) {
 			console.error(`tried to update players that did not actually exist: ${userToReceiveUpdateId} & ${userToUpdateId}`);
 			return Errors.Error.INVALID_UPDATE;
 		}
-		if(!this.server.users.users[userToReceiveUpdateId].remote) {
-			console.error(`${userToReceiveUpdateId} did not have a socket open!`)
+		if (!this.server.users.users[userToReceiveUpdateId].remote) {
+			console.error(`${userToReceiveUpdateId} did not have a socket open!`);
 			return Errors.Error.NO_CONNECTION_AVAILABLE;
 		}
 		const updatePacket = this.server.createPacket(Packets.Packet.PLAYER_UPDATE);
@@ -95,85 +93,66 @@ class PropHuntGroupList {
 		setup.writeUInt8(updateType, 0);
 		setup.writeUInt16BE(updateUser.numericId, 1);
 		updatePacket.push(setup);
-		this.server.debug(`sending ${this.server.users.users[userToUpdateId].username}'s ${Packets.PlayerUpdates[updateType]} update to ${this.server.users.users[userToReceiveUpdateId].username}`)
-		switch (updateType) {
-			case Packets.Packet.UPDATE_LOCATION:
-				if (updateUser.location != null) {
-					let updateLocation = updateUser.location;
-					let locationBuffer = Buffer.alloc(2 + 2 + 1 + 2); // 2 x 2 y 1 z 2 orientation
-					locationBuffer.writeUInt16BE(updateLocation.x, 0);
-					locationBuffer.writeUInt16BE(updateLocation.y, 2);
-					locationBuffer.writeUInt8(updateLocation.z, 3);
-					locationBuffer.writeUInt16BE(updateUser.orientation, 4);
-					updatePacket.push(locationBuffer);
-				}
-				break;
-
-			case Packets.Packet.UPDATE_PROP:
-				let updatePropId = updateUser.propId;
-				let updatePropType = updateUser.propType;
-				let propUpdateBuffer = Buffer.alloc(2 + 1); // 2 bytes for id (uint16) and 1 for type (uint8);
-				propUpdateBuffer.writeUInt16BE(updatePropId, 0);
-				propUpdateBuffer.writeUInt8(updatePropType, 2);
-				updatePacket.push(propUpdateBuffer);
-				break;
-
-			case Packets.Packet.UPDATE_TEAM:
-				let updateTeam = updateUser.team;
-				break;
-
-			case Packets.Packet.UPDATE_STATUS:
-				let updateStatus = updateUser.status;
-				break;
+		//this.server.debug(`sending ${this.server.users.users[userToUpdateId].username}'s ${Packets.PlayerUpdates[updateType]} update to ${this.server.users.users[userToReceiveUpdateId].username}`);
+		if(updateType == Packets.PlayerUpdate.LOCATION) {
+			let updateLocation = updateUser.location;
+			let locationBuffer = Buffer.alloc(2 + 2 + 1 + 2); // 2 x 2 y 1 z 2 orientation
+			locationBuffer.writeUInt16BE(updateLocation.getX(), 0);
+			locationBuffer.writeUInt16BE(updateLocation.getY(), 2);
+			locationBuffer.writeUInt8(updateLocation.getZ(), 3);
+			locationBuffer.writeUInt16BE(updateUser.orientation, 4);
+			updatePacket.push(locationBuffer);
 		}
 		this.server.sendPacket(updatePacket, this.server.users.users[userToReceiveUpdateId].remote);
 	}
 
 	// sends the group player list
 	sendUserList(userId, groupId, regionUpdate) {
-		if(!this.server.users.users[userId]?.remote) {
+		if (!this.server.users.users[userId]?.remote) {
 			return Errors.Error.INVALID_USER_ID || Errors.Error.NO_CONNECTION_AVAILABLE;
 		}
-		if(!this.server.users.users[groupId]) {
+		if (!this.server.users.users[groupId]) {
 			return Errors.Error.INVALID_GROUP;
 		}
 		const packet = this.server.createPacket(Packets.Packet.PLAYER_LIST);
 		const groupUsers = this.groups[groupId].users;
-		const remote = this.server.users.users[userId].remote;
-		// calculate the total size needed for the buffer
-		let totalSize = 0;
-		for (const groupUserId of groupUsers) {
-			console.log("groupUser",groupUserId)
-			let groupUser = this.server.users.users[groupUserId];
-			totalSize += 3 + groupUser.username.length; // allocate 2 bytes (uint16) + 1 bytes (uint8) + username length
-		}
-		// allocate the entire buffer
-		const userBuffer = Buffer.alloc(totalSize);
-
-		let offset = 0;
-		for (const groupUserId of groupUsers) {
-			console.log("groupUserId",groupUserId);
-			// if the user doesn't exist or they don't have any location data that sucks
-			if(!this.server.users.users[groupUserId]?.regionId) {
-				continue;
+		if (groupUsers.length > 0) {
+			const remote = this.server.users.users[userId].remote;
+			// calculate the total size needed for the buffer
+			let totalSize = 0;
+			for (const groupUserId of groupUsers) {
+				let groupUser = this.server.users.users[groupUserId];
+				totalSize += 3 + groupUser.username.length; // allocate 2 bytes (uint16) + 1 bytes (uint8) + username length
 			}
-			// they're not in the same region so they don't need to know
-			if(regionUpdate && this.server.users.users[userId].regionId !== this.server.users.users[groupUserId].regionId) {
-				continue;
+			// allocate the entire buffer
+			const userBuffer = Buffer.alloc(totalSize);
+
+			let offset = 0;
+			for (const groupUserId of groupUsers) {
+				// if the user doesn't exist or they don't have any location data that sucks
+				if (!this.server.users.users[groupUserId]?.regionId) {
+					continue;
+				}
+				// they're not in the same region so they don't need to know
+				if (regionUpdate && this.server.users.users[userId].regionId !== this.server.users.users[groupUserId].regionId) {
+					continue;
+				}
+				let groupUser = this.server.users.users[groupUserId];
+				userBuffer.writeUInt16BE(groupUser.numericId, offset);
+				offset += 2;
+
+				const usernameLength = groupUser.username.length;
+				userBuffer.writeUInt8(usernameLength, offset);
+				offset++;
+
+				userBuffer.write(groupUser.username, offset, usernameLength);
+				offset += usernameLength;
 			}
-			let groupUser = this.server.users.users[groupUserId];
-			userBuffer.writeUInt16BE(groupUser.numericId, offset);
-			offset += 2;
-
-			const usernameLength = groupUser.username.length;
-			userBuffer.writeUInt8(usernameLength, offset);
-			offset++;
-
-			userBuffer.write(groupUser.username, offset, usernameLength);
-			offset += usernameLength;
+			let sizeBuffer = Buffer.alloc(2);
+			sizeBuffer.writeUInt16BE(userBuffer.length);
+			packet.push(Buffer.concat([sizeBuffer, userBuffer]));
+			this.server.sendPacket(packet, remote);
 		}
-		packet.push(userBuffer);
-		this.server.sendPacket(packet, remote);
 	}
 
 	// used when a new group is created so the player knows what their group ID is for sharing.
@@ -181,7 +160,7 @@ class PropHuntGroupList {
 		if (!this.groups[groupId]) {
 			return Errors.Error.INVALID_GROUP;
 		}
-		if(!this.server.users.users[userId]?.remote) {
+		if (!this.server.users.users[userId]?.remote) {
 			return Errors.Error.INVALID_USER_ID || Errors.Error.NO_CONNECTION_AVAILABLE;
 		}
 		const remote = this.server.users.users[userId].remote;
