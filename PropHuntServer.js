@@ -28,7 +28,7 @@ class PropHuntServer {
 		});
 
 		this.server.on("listening", () => {
-			this.log("Prop hunt server started");
+			this.server.debug("Prop hunt server started");
 		});
 
 		this.server.bind(Config.SERVER_PORT);
@@ -41,7 +41,7 @@ class PropHuntServer {
 	#handleMessage(message, remote) {
 		try {
 			if (message.length < 3) {
-				this.log("\x1b[31mMalformed packet: Insufficient data length");
+				this.server.debug("\x1b[31mMalformed packet: Insufficient data length");
 				return;
 			}
 			// TODO: throttle/rate limit packets
@@ -130,6 +130,12 @@ class PropHuntServer {
 	log(message) {
 		const address = this.server.address();
 		console.log(`[\x1b[34m${address.address}\x1b[39m:\x1b[37m${address.port}\x1b[39m]: \x1b[32m${message}\x1b[39m`);
+	}
+
+	debug(message) {
+		if(Config.VERBOSITY > 1) {
+			this.log(`\x1b[34m[DEBUG] ${message}`);
+		}
 	}
 
 	getGroups() {

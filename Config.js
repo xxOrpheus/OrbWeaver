@@ -6,6 +6,7 @@ const Config = {
     "DUPLICATE_PACKET_THROTTLE_MS": 600,
     "DUPLICATE_PACKET_THROTTLE_LIMIT": 1,
     "MAX_PACKETS_PER_TICK": 10,
+    "VERBOSITY": 2 // > 1 = debug logging
 };
 
 module.exports = Config;

@@ -16,60 +16,72 @@ class GameTick {
 	startTick() {
 		try {
 			// TODO: we could put this tick to rest when there is nothing happening (no players in games)
-			this.tick = setInterval(() => {
-				// if a player enters a new region, they need to receive all player's data as they will have no prior knowledge
-				for (const userIdToUpdate in this.server.users.needsUpdate) {
-					const userToUpdateId = this.server.users.needsUpdate[userIdToUpdate];
-					const userToUpdate = this.server.users.users[userToUpdateId];
-					const userRegionId = userToUpdate.regionId;
-					for (const userIdInSameRegion in this.server.users.regionMap[userRegionId]) {
-						if(!this.server.users.users[this.server.users.regionMap[userRegionId][userIdInSameRegion]]) {
+			this.tick = setInterval(() => this.cycle(), this.freq);
+			this.running = true;
+		} catch (error) {
+			this.server.debug(error);
+		}
+	}
+
+
+	// TODO : there is repeated logic in this block, let's break it down later
+	cycle() {
+			// if a player enters a new region, they need to receive all player's data as they will have no prior knowledge
+			for (const userIdToUpdate in this.server.users.needsUpdate) {
+				const userToUpdateId = this.server.users.needsUpdate[userIdToUpdate];
+				const userToUpdate = this.server.users.users[userToUpdateId];
+				const userRegionId = userToUpdate.regionId;
+				for (const userIdInSameRegion in this.server.users.regionMap[userRegionId]) {
+					// make sure the user still exists, if they don't they should be removed from the regionMap
+					if(!this.server.users.users[this.server.users.regionMap[userRegionId][userIdInSameRegion]]) {
+						delete this.server.users.regionMap[userRegionId][userIdInSameRegion];
+						continue;
+					}
+					const userInSameRegion = this.server.users.users[this.server.users.regionMap[userRegionId][userIdInSameRegion]];
+					if (userInSameRegion.id !== userToUpdateId) {
+						//this.server.debug(`${userToUpdate.username} should receive ${userInSameRegion.username}'s updates`);
+						
+						// i guess we actually only need the prop and location to be updated, the rest only the server needs to know
+						this.updateQueue[Packets.PlayerUpdate.LOCATION].push(userIdInSameRegion);
+						this.updateQueue[Packets.PlayerUpdate.PROP].push(userIdInSameRegion);
+					}
+				}
+			}
+			// all needed player updates should have been processed and the array can be reset
+			this.server.users.needsUpdate = [];
+
+			// otherwise we will only send updates as needed from the queue
+			for (const updateType in this.updateQueue) {
+				if (this.updateQueue[updateType].length > 0) {
+					let usersToUpdate = this.updateQueue[updateType];
+					for (const userToUpdateId of usersToUpdate) {
+						// if the user doesn't exist we go to the next cycle
+						if (!this.server.users.users[userToUpdateId]) {
 							continue;
 						}
-						const userInSameRegion = this.server.users.users[this.server.users.regionMap[userRegionId][userIdInSameRegion]];
-						if (userInSameRegion.id !== userToUpdateId) {
-							// TODO: update new users in the region
-							// update logic
-							// maybe just this.enqueueUpdate for all update types for each user in the region? sounds pretty crazy though
-							this.server.log(`${userToUpdate.username} should receive ${userInSameRegion.username}'s updates`)
+						let userToUpdate = this.server.users.users[userToUpdateId];
+						let regionUsersMap = this.server.users.regionMap[userToUpdate.regionId];
+						userToUpdate.notify(); // set their last active time
+						/// We only need to update users in the same region
+						for (const userToReceiveUpdateId of regionUsersMap) {
+							if (userToReceiveUpdateId !== userToUpdateId && !!this.server.users.users[userToReceiveUpdateId]
+								&& userToUpdate.groupId === this.server.users.users[userToReceiveUpdateId].groupId) {
+								this.server.groups.sendPlayerUpdate(userToReceiveUpdateId, userToUpdateId, updateType);
+							}
 						}
 					}
+					this.updateQueue[updateType] = [];
 				}
-				// all needed player updates should have been processed and the array can be reset
-				this.server.users.needsUpdate = [];
+			}
+	}
 
-				// otherwise we will only send updates as needed from the queue
-				for (const updateType in this.updateQueue) {
-					if (this.updateQueue[updateType].length > 0) {
-						let usersToUpdate = this.updateQueue[updateType];
-						for (const userToUpdateId of usersToUpdate) {
-							let userToUpdate = this.server.users.users[userToUpdateId];
-							let regionUsersMap = this.server.users.regionMap[userToUpdate.regionId];
-							//const updateUserId = usersToUpdate[userIdToUpdate];
-							if (!userToUpdate) {
-								continue;
-							}
-							userToUpdate.notify(); // set their last active time
-							/// We only need to update users in the same region
-							for (const userToReceiveUpdateId of regionUsersMap) {
-								if (userToReceiveUpdateId !== userToUpdateId && !!this.server.users.users[userToReceiveUpdateId]
-									&& userToUpdate.groupId === this.server.users.users[userToReceiveUpdateId].groupId) {
-									this.server.groups.sendPlayerUpdate(userToReceiveUpdateId, userToUpdateId, updateType);
-								}
-							}
-						}
-						this.updateQueue[updateType] = [];
-					}
-				}
-				//this.updateQueue = [];
-			}, this.freq);
-		} catch (error) {
-			console.error(error);
-		}
+	updateUsersInSameRegion(userIdToUpdate, callback) {
+
 	}
 
 	stopTick() {
 		clearInterval(this.tick);
+		this.running = false;
 	}
 
 	initializeUpdateQueue() {
@@ -92,7 +104,6 @@ class GameTick {
 			if (this.updateQueue[updateType][user.id]) {
 				delete this.updateQueue[updateType][user.id]; // if there are previous updates queued we can safely remove them. (e.g. location updates would stack very fast but we only need the most recent one)
 			}
-			this.server.log(`[update@${user.username}] ${Packets.PlayerUpdates[updateType]}`);
 			switch (updateType) {
 				case Packets.PlayerUpdate.LOCATION:
 					const x = message.readUInt16BE(offset);
@@ -126,8 +137,9 @@ class GameTick {
 						this.server.users.users[user.id].regionId = regionId;
 						this.server.users.users[user.id].orientation = orientation;
 						this.server.users.regionMap[regionId].push(user.id);
+						// they're in a new region so they need to receive the updated player list
+						this.server.groups.groups[user.groupId].sendUserList(user.id, user.groupId)
 						this.server.users.setNeedsUpdate(user.id);
-						this.server.log(`new location: ${user.location}(${orientation}*)@region${regionId}`);
 					}
 					this.server.users.users[user.id].location = location;
 					break;
@@ -143,10 +155,6 @@ class GameTick {
 						this.server.users.users[user.id].propId = propId;
 						this.server.users.users[user.id].propType = propType == 0 ? 0 : 1;
 					}
-					break;
-
-				// teams will probably be assigned by the server so we likely won't need this
-				case Packets.PlayerUpdate.TEAM:
 					break;
 			}
 			this.updateQueue[updateType].push(user.id);
