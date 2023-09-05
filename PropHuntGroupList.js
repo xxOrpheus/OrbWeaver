@@ -83,10 +83,16 @@ class PropHuntGroupList {
 			console.error(`tried to update players that did not actually exist: ${userToReceiveUpdateId} & ${userToUpdateId}`);
 			return Errors.Error.INVALID_UPDATE;
 		}
+
 		if (!this.server.users.users[userToReceiveUpdateId].remote) {
 			console.error(`${userToReceiveUpdateId} did not have a socket open!`);
 			return Errors.Error.NO_CONNECTION_AVAILABLE;
 		}
+		// they don't need to update themselves that would be ridiculous
+		if(userToReceiveUpdateId == userToUpdateId) {
+			return;
+		}
+
 		const updatePacket = this.server.createPacket(Packets.Packet.PLAYER_UPDATE);
 		const updateUser = this.server.users.users[userToUpdateId];
 		const setup = Buffer.alloc(3); // 1 byte for update type, 2 for user ID
@@ -97,10 +103,11 @@ class PropHuntGroupList {
 		if(updateType == Packets.PlayerUpdate.LOCATION) {
 			let updateLocation = updateUser.location;
 			let locationBuffer = Buffer.alloc(2 + 2 + 1 + 2); // 2 x 2 y 1 z 2 orientation
+			console.log("coord", updateLocation.getX(), updateLocation.getY(), updateLocation.getZ(), updateUser.orientation);
 			locationBuffer.writeUInt16BE(updateLocation.getX(), 0);
 			locationBuffer.writeUInt16BE(updateLocation.getY(), 2);
-			locationBuffer.writeUInt8(updateLocation.getZ(), 3);
-			locationBuffer.writeUInt16BE(updateUser.orientation, 4);
+			locationBuffer.writeUInt8(updateLocation.getZ(), 4);
+			locationBuffer.writeUInt16BE(updateUser.orientation, 5);
 			updatePacket.push(locationBuffer);
 		}
 		this.server.sendPacket(updatePacket, this.server.users.users[userToReceiveUpdateId].remote);
@@ -111,7 +118,7 @@ class PropHuntGroupList {
 		if (!this.server.users.users[userId]?.remote) {
 			return Errors.Error.INVALID_USER_ID || Errors.Error.NO_CONNECTION_AVAILABLE;
 		}
-		if (!this.server.users.users[groupId]) {
+		if (!this.server.groups.groups[groupId]) {
 			return Errors.Error.INVALID_GROUP;
 		}
 		const packet = this.server.createPacket(Packets.Packet.PLAYER_LIST);
@@ -121,6 +128,10 @@ class PropHuntGroupList {
 			// calculate the total size needed for the buffer
 			let totalSize = 0;
 			for (const groupUserId of groupUsers) {
+				// we don't need to send the user to themselves, save the  bandwidth
+				if(groupUserId == userId) {
+					continue;
+				}
 				let groupUser = this.server.users.users[groupUserId];
 				totalSize += 3 + groupUser.username.length; // allocate 2 bytes (uint16) + 1 bytes (uint8) + username length
 			}
@@ -129,6 +140,10 @@ class PropHuntGroupList {
 
 			let offset = 0;
 			for (const groupUserId of groupUsers) {
+				// we don't need to send the user to themselves, save the bandwidth
+				if(groupUserId == userId) {
+					continue;
+				}
 				// if the user doesn't exist or they don't have any location data that sucks
 				if (!this.server.users.users[groupUserId]?.regionId) {
 					continue;
@@ -148,10 +163,12 @@ class PropHuntGroupList {
 				userBuffer.write(groupUser.username, offset, usernameLength);
 				offset += usernameLength;
 			}
-			let sizeBuffer = Buffer.alloc(2);
-			sizeBuffer.writeUInt16BE(userBuffer.length);
-			packet.push(Buffer.concat([sizeBuffer, userBuffer]));
-			this.server.sendPacket(packet, remote);
+			if(totalSize > 0) {
+				let sizeBuffer = Buffer.alloc(2);
+				sizeBuffer.writeUInt16BE(userBuffer.length);
+				packet.push(Buffer.concat([sizeBuffer, userBuffer]));
+				this.server.sendPacket(packet, remote);
+			}
 		}
 	}
 

@@ -6,7 +6,8 @@ const Config = {
     "DUPLICATE_PACKET_THROTTLE_MS": 600,
     "DUPLICATE_PACKET_THROTTLE_LIMIT": 1,
     "MAX_PACKETS_PER_TICK": 10,
-    "VERBOSITY": 2 // > 1 = debug logging
+    "VERBOSITY": 2, // > 1 = debug logging,
+    "LOGOUT_TIMER": 60 * 1000 * 5 // how long should a user stay logged in (with no activity) before a new session can take over? (ms)
 };
 
 module.exports = Config;

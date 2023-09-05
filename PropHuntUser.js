@@ -7,7 +7,7 @@ const Location = require("./Location.js");
 //uuidv4(); // ⇨ '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed'
 
 class PropHuntUser {
-	constructor(username, password, worldNumber) {
+	constructor(username, worldNumber) {
 		this.username = username;
 		this.active = Util.currentTime();
 		this.id = uuidv4();

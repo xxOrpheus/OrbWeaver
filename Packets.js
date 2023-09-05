@@ -7,16 +7,17 @@ const Packets = [
 	// order is protocol sensitive but that's ok , just share this list with the client.
 	"USER_LOGIN",
 	"USER_GET_JWT",
-	"USER_LOGOUT", // TODO: Logout
+	"USER_LOGOUT",
 
 	"GROUP_NEW",
 	"GROUP_JOIN",
 	"GROUP_LEAVE",
-	"GROUP_USERS",
 	"GROUP_INFO",
+
 	"GROUP_START_GAME", // TODO: Start the game
 	"GROUP_END_GAME", // TODO: End the game
 	"GROUP_SET_STAGE", // TODO: Set the play area
+	
 	"PLAYER_LIST",
 	"PLAYER_UPDATE", // PLAYER_UPDATE opcode is followed by PlayerUpdate type found below
 

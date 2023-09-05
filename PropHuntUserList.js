@@ -34,35 +34,38 @@ class PropHuntUserList {
 
 	async login(message, offset, remote, token) {
 		try {
-			// TODO: I don't feel like this really belongs here but it's ok for now
 			const size = 2; //read username, password  (utf8)
 			const loginDetails = Packets.utf8Deserialize(message, size, offset, remote);
+			let userId, worldNumber;
 			offset = loginDetails.offset;
 			if (loginDetails.data.length >= size) {
 				const username = loginDetails.data[0].toLowerCase().trim();
 				const password = loginDetails.data[1];
-				// do not try to make a new login if they're already logged in, revalidate previous session.
-				// TODO: previous sessions must hold priority if they are still active, they can't be overidden by the new one.
 				const playerOnline = this.playerOnline(username);
 				if (playerOnline != false) {
 					return await Util.verifyPasscode(playerOnline.password, password).then(
 						function (result) {
 							if (result == false) {
 								this.server.sendError(Errors.Error.INVALID_PASSWORD, remote);
-								this.server.debug("invalid password");
 								return Errors.Error.INVALID_PASSWORD;
 							} else {
-								if (this.server.verifyJWT(token)?.id == playerOnline.id) {
+								let inactive = Util.currentTime() - playerOnline.lastActive > Config.LOGOUT_TIMER == true;
+								// verify them if they still have the JWT token from the previous session, or bypass the token if they have been inactive
+								if (this.server.verifyJWT(token)?.id == playerOnline.id || inactive) {
+									if (inactive) {
+										this.updateJWT(userId);
+									}
 									// not sure if this matters but it won't hurt
 									this.users[playerOnline.id].remote = remote;
+									userId = playerOnline.id;
+									worldNumber = playerOnline.worldNumber;
 									// if they're in a group they should receive the group info again
-									if (playerOnline.groupId != null) {
+									if (playerOnline.groupId != null && this.server.groups.groups[playerOnline.groupId] != null) {
 										this.server.groups.sendUserList(playerOnline.id, playerOnline.groupId);
 										this.server.groups.sendGroupInfo(playerOnline.id, playerOnline.groupId);
 									}
 								} else {
 									this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
-									this.server.debug("invalid login (jwt)");
 									return Errors.Error.INVALID_LOGIN;
 								}
 							}
@@ -70,15 +73,20 @@ class PropHuntUserList {
 					);
 				} // make sure it is a valid name first
 				else if (Util.isValidName(username)) {
-					const worldNumber = message.readUInt16BE(offset);
-					// we don't want a valid token as this is supposed to be a new login
+					worldNumber = message.readUInt16BE(offset);
+					// the following block of code might be unnecessary and actually introduce more problems than it solves, and also increases server load.
+					// let's test with out it for now
+					
+					/*// we don't want a valid token as this is supposed to be a new login
 					if (this.server.verifyJWT(token)) {
 						this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
 						return Errors.Error.INVALID_LOGIN;
 					} // make sure it is a valid world too
-					else if (Util.isValidWorld(worldNumber)) {
-						const user = new PropHuntUser(username, password, worldNumber);
-						const userId = user.id;
+					else */
+
+					if (Util.isValidWorld(worldNumber)) {
+						const user = new PropHuntUser(username, worldNumber);
+						userId = user.id;
 						// cycle numeric id's for use in packets to save bandwidth vs sending the username
 						const numericId = this.recycledIDs.length > 0 ? this.recycledIDs.shift() : this.nextId++;
 						user.numericId = numericId;
@@ -89,9 +97,7 @@ class PropHuntUserList {
 						this.usersOnline[username] = userId;
 
 						await this.users[userId].setPassword(password).then((result) => {
-							this.users[userId].jwt = this.server.getJWT().sign({ id: userId }, Config.JWT_SECRET_KEY);
-							this.server.log(`[${userId}] ${username} has logged in (World ${worldNumber})`);
-							this.sendJWT(this.users[userId].jwt, remote);
+							this.updateJWT(userId);
 						});
 					} else {
 						this.server.sendError(Errors.Error.INVALID_WORLD, remote);
@@ -103,6 +109,8 @@ class PropHuntUserList {
 					return Errors.Error.INVALID_NAME;
 				}
 				// no error code was returned, we can safely do any final operations here:
+
+				this.server.log(`[${userId}] ${username} has logged in (World ${worldNumber})`);
 			}
 		} catch (error) {
 			this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
@@ -127,6 +135,7 @@ class PropHuntUserList {
 			}
 			if (this.users[userId].regionId) {
 				const regionId = this.users[userId].regionId;
+				// remove them from the regionMap so no further updates are attempted 
 				if (this.regionMap[regionId]?.[userId]) {
 					delete this.regionMap[regionId][userId];
 				}
@@ -202,7 +211,8 @@ class PropHuntUserList {
 				this.server.sendError(Errors.Error.INVALID_GROUP, user.remote);
 				return Errors.Error.INVALID_GROUP;
 			}
-		} else { // we can still tell their gui to update incase something weird happened
+		} else {
+			// we can still tell their gui to update incase something weird happened
 			const packet = this.server.createPacket(Packets.Packet.GROUP_LEAVE);
 			this.server.sendPacket(packet, remote);
 		}
@@ -217,18 +227,22 @@ class PropHuntUserList {
 		}
 	}
 
-	sendJWT(jwt, remote) {
-		const actionBuffer = Buffer.alloc(1);
-		actionBuffer.writeUInt8(Packets.Packet.USER_GET_JWT, 0);
-		const jwtBuffer = Buffer.from(jwt, "utf8");
-		const sizeBuffer = Buffer.from([jwtBuffer.length]);
-		const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer]);
+	updateJWT(userId) {
+		if (this.users[userId]?.remote) {
+			const remote = this.users[userId].remote;
+			let jwt = this.users[userId].jwt = this.server.getJWT().sign({ id: userId }, Config.JWT_SECRET_KEY);
+			const actionBuffer = Buffer.alloc(1);
+			actionBuffer.writeUInt8(Packets.Packet.USER_GET_JWT, 0);
+			const jwtBuffer = Buffer.from(jwt, "utf8");
+			const sizeBuffer = Buffer.from([jwtBuffer.length]);
+			const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer]);
 
-		this.server.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
-			if (err) {
-				console.error("Error sending response:", err);
-			}
-		});
+			this.server.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
+				if (err) {
+					console.error("Error sending response:", err);
+				}
+			});
+		}
 	}
 
 	getUsers() {

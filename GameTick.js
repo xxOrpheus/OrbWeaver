@@ -153,7 +153,7 @@ class GameTick {
 							this.server.users.setNeedsUpdate(user.id);
 						}
 						this.server.users.users[user.id].location = location;
-						//this.server.debug(`${user.username} new location: ${location}`);
+						this.server.debug(`${user.username} new location: ${x} ${y} ${z} ${orientation}`);
 						break;
 
 					case Packets.PlayerUpdate.PROP:

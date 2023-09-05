@@ -23,7 +23,7 @@ const Errors = require("./Errors.js");
 //console.log(unmasked);
 let jwt = "unauthorized";
 let groupId;
-login("boty", "password", 420);
+login("ya", "password", 420);
 client.on("message", function (message, remote) {
 	let offset = 0;
 	const action = message.readUInt8(0);
@@ -42,8 +42,8 @@ client.on("message", function (message, remote) {
 		jwt = userDetails[0];
 		//createGroup();
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
-		joinGroup("44e77bef-d00e-44ec-b3e9-0a069be1a5ce");
-		updateLocation(3456, 5678, 1, 1024);
+		joinGroup("0d63a1de-4e8b-44e4-9ec1-2d0c8f8b66bc");
+		updateLocation(1234, 5678, 1, 2048);
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		data = message.readUint16BE(offset);
@@ -51,22 +51,28 @@ client.on("message", function (message, remote) {
 			console.log(`ERROR RECV: ${Errors.Errors[data]}`);
 		}
 	} else if (action == Packets.Packet.PLAYER_UPDATE) {
-		let updateType = message.readUInt8(offset);
-		offset ++;
-		if(updateType == 0) {
-			let x = message.readUInt16BE(offset);
+		console.log(message.toString());
+		const updateType = message.readUInt8(offset);
+		offset++;
+		if (updateType == Packets.PlayerUpdate.LOCATION) {
+			const userIdToUpdate = message.readUInt16BE(offset);
 			offset += 2;
-			let y = message.readUInt16BE(offset);
+			const x = message.readUInt16BE(offset);
 			offset += 2;
-			let z = message.readUInt8(offset);
+			const y = message.readUInt16BE(offset);
+			offset += 2;
+			const z = message.readUInt8(offset);
 			offset++;
-			let orientation = message.readUInt16BE(offset);
+			const orientation = message.readUInt16BE(offset);
+			offset += 2;
+
+			console.log("location", updateType, userIdToUpdate, x, y, z, orientation);
 		}
 	} else if (action == Packets.Packet.PLAYER_LIST) {
 		let length = message.readUInt16BE(offset);
 		console.log("length: " + length);
 		offset += 2;
-		while(offset < message.length) {
+		while (offset < message.length) {
 			let userId = message.readUInt16BE(offset);
 			offset += 2;
 			let usernameLength = message.readUInt8(offset);
