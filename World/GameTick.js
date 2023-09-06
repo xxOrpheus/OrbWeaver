@@ -1,10 +1,12 @@
-const Packets = require("./Packets.js");
-const Errors = require("./Errors.js");
-const Location = require("./Location.js");
+import * as Packets from '#server/Packets';
+import Config from '#config/Config';
+import * as Errors from '#config/Errors';
+import PlayerLocation from '#updates/PlayerLocation';
+import PlayerModel from '#updates/PlayerModel';
+
 
 class GameTick {
 	tick = null;
-	freq = 600; // ms time
 	//garbageCollectorFreq = this.freq * 500; // collect every 500 ticks (5 minutes)
 	server = null;
 	updateQueue = {};
@@ -13,12 +15,15 @@ class GameTick {
 		this.server = server;
 		this.initializeUpdateQueue();
 		this.startTick();
+		this.server.log("GameTick initialized...");
 	}
 
 	startTick() {
 		try {
 			// TODO: we could put this tick to rest when there is nothing happening (no players in games)
-			this.tick = setInterval(() => this.cycle(), this.freq);
+			this.tick = setInterval(() => this.cycle(), Config.TICK_LENGTH);
+			
+			// TODO: we should check if any memory is being wasted (it shouldn't be if we do everything right, this might never be necessary) 
 			//this.garbageCollector = setInterval(() => {
 			//	// do clean up 
 			//}, this.garbageCollectorFreq);
@@ -44,13 +49,9 @@ class GameTick {
 				}
 				
 				if (userInSameRegionId !== userToUpdateId) {
-					//this.server.debug(`${userToUpdate.username} should receive ${userInSameRegion.username}'s updates`);
-					//const userInSameRegion = this.server.users.users[];
-
-					// i guess we actually only need the prop and location to be updated, the rest only the server needs to know
-					//console.log("someone needed an update: " + userInSameRegionId + " " + userToUpdateId);
+					// i guess we actually only need the model and location to be updated, the rest only the server needs to know
 					this.updateQueue[Packets.PlayerUpdate.LOCATION].push(userInSameRegionId);
-					this.updateQueue[Packets.PlayerUpdate.PROP].push(userInSameRegionId);
+					//this.updateQueue[Packets.PlayerUpdate.MODEL].push(userInSameRegionId);
 				}
 			}
 		}
@@ -62,11 +63,15 @@ class GameTick {
 			if (this.updateQueue[updateType].length > 0) {
 				let usersToUpdate = this.updateQueue[updateType];
 				for (const userToUpdateId of usersToUpdate) {
-					// if the user doesn't exist we go to the next cycle
-					if (!this.server.users.users[userToUpdateId]) {
+					// if the user doesn't exist/isn't in a region (no location data), we go to the next cycle- they don't need to be updated yet
+					if (!this.server.users.users[userToUpdateId]?.regionId) {
 						continue;
 					}
 					let userToUpdate = this.server.users.users[userToUpdateId];
+					// the region map hasn't been created, we should skip for now.
+					if(!this.server.users.regionMap[userToUpdate.regionId]) {
+						continue;
+					}
 					let regionUsersMap = this.server.users.regionMap[userToUpdate.regionId];
 					userToUpdate.notify(); // set their last active time
 					/// We only need to update users in the same region
@@ -101,12 +106,9 @@ class GameTick {
 	enqueueUpdate(message, offset, remote, token) {
 		// handles back end logic for the actual player updating, and subsequently enqueues the data to be pushed to other players
 
-		// packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID<omitted when receiving an update, only used for sending updates> UPDATE_DATA...
+		// packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID<omitted when receiving an update, only used for sending updates> ...UPDATE_DATA
 		let user = this.server.verifyJWT(token);
 		if (user?.id && this.server.users.users[user.id]) {
-			/*console.log("message: " + message.toString());
-			console.log("message length: " + message.length);
-			console.log("offset: " + offset);*/
 			if (offset < message.length) {
 				// offset cant be longer than the length or something is seriously fucked up
 				const updateType = message.readUInt8(offset);
@@ -116,57 +118,15 @@ class GameTick {
 				if (this.updateQueue[updateType]?.[user.id]) {
 					delete this.updateQueue[updateType][user.id]; // if there are previous updates queued we can safely remove them. (e.g. location updates would stack very fast but we only need the most recent one)
 				}
+
+				// all updates should follow the same structure UpdateType.update(GameTick, User, message, offset)
 				switch (updateType) {
 					case Packets.PlayerUpdate.LOCATION:
-						const x = message.readUInt16BE(offset);
-						offset += 2;
-						const y = message.readUInt16BE(offset);
-						offset += 2;
-						const z = message.readUInt8(offset);
-						offset++;
-						const orientation = message.readUInt16BE(offset);
-						offset += 2;
-						const location = new Location(x, y, z);
-						const regionId = location.getRegionId();
-						// if the region hasn't been entered before we need to instantiate a new array before we can populate it
-						if (!this.server.users.regionMap[regionId]) {
-							this.server.users.regionMap[regionId] = [];
-						}
-						if (user.regionId != regionId) {
-							// we must remove them from their previous region mapping
-							const oldRegion = this.server.users.users[user.id].regionId;
-							if (this.server.users.regionMap[oldRegion]?.[user.id] != null) {
-								delete this.server.users.regionMap[oldRegion][user.id];
-							}
-							// we can remove the region mapping if there is no one in it
-							if (this.server.users.regionMap[oldRegion]?.length < 1) {
-								delete this.server.users.regionMap[oldRegion];
-							}
-							// assign the new region id and add them to the region map, add them to the list of users that need a full update
-							this.server.users.users[user.id].regionId = regionId;
-							this.server.users.users[user.id].orientation = orientation;
-							this.server.users.regionMap[regionId].push(user.id);
-							// they're in a new region so they need to receive the updated player list
-							if (user.groupId) {
-								this.server.groups.sendUserList(user.id, user.groupId);
-							}
-							this.server.users.setNeedsUpdate(user.id);
-						}
-						this.server.users.users[user.id].location = location;
-						this.server.debug(`${user.username} new location: ${x} ${y} ${z} ${orientation}`);
+						PlayerLocation.update(this, user, message, offset);
 						break;
 
-					case Packets.PlayerUpdate.PROP:
-						const propId = message.readUInt16BE(offset);
-						offset += 2;
-						const propType = message.readUInt8(offset);
-						offset++;
-						if (propId < 0 || propId > 65535) {
-							this.server.sendError(Errors.Error.INVALID_PROP, remote);
-						} else {
-							this.server.users.users[user.id].propId = propId;
-							this.server.users.users[user.id].propType = propType == 0 ? 0 : 1;
-						}
+					case Packets.PlayerUpdate.MODEL:
+						PlayerModel.update(this, user, message, offset);
 						break;
 				}
 				this.updateQueue[updateType].push(user.id);
@@ -175,4 +135,4 @@ class GameTick {
 	}
 }
 
-module.exports = GameTick;
+export default GameTick;

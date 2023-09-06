@@ -1,10 +1,11 @@
-var Util = require("./Util.js");
-const Errors = require("./Errors.js");
+import Util from '#server/Util';
+import * as Errors from '#config/Errors';
 
-const { v4: uuidv4 } = require("uuid");
+import { v4 as uuidv4 } from 'uuid';
+
 uuidv4(); // ⇨ '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed'
 
-class PropHuntGroup {
+class Group {
 	#countdown = null;
 	constructor(userId, world) {
 		if (!Util.isValidWorld(world)) {
@@ -105,4 +106,4 @@ class PropHuntGroup {
 	}
 }
 
-module.exports = PropHuntGroup;
+export default Group;

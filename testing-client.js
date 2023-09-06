@@ -4,14 +4,14 @@
  *
  */
 
-const dgram = require("dgram");
-const Config = require("./Config.js");
-const Util = require("./Util.js");
-const client = dgram.createSocket("udp4");
+import dgram from 'dgram';
+import Config from '#config/Config';
+const client = dgram.createSocket('udp4');
 const serverPort = Config.SERVER_PORT;
-const serverAddress = "127.0.0.1";
-const Packets = require("./Packets.js");
-const Errors = require("./Errors.js");
+const serverAddress = '127.0.0.1';
+import * as Packets from '#server/Packets';
+import * as Errors from '#config/Errors';
+
 
 // BEGIN USER_LOGIN
 
@@ -40,13 +40,13 @@ client.on("message", function (message, remote) {
 		const userDetails = data.data;
 
 		jwt = userDetails[0];
-		//createGroup();
+		createGroup();
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
-		joinGroup("34ca61c6-9b41-4def-b510-f395d5268f0c");
+		//joinGroup("34ca61c6-9b41-4def-b510-f395d5268f0c");
 		updateLocation(1234, 5678, 1, 2048);
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
-		data = message.readUint16BE(offset);
+		let data = message.readUint16BE(offset);
 		if (Errors.Errors[data]) {
 			console.log(`ERROR RECV: ${Errors.Errors[data]}`);
 		}

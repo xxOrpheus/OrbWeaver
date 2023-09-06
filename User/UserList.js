@@ -1,10 +1,10 @@
-const Config = require("./Config.js");
-const Util = require("./Util.js");
-const Packets = require("./Packets.js");
-const Errors = require("./Errors.js");
-const PropHuntUser = require("./PropHuntUser.js");
+import Config from '#config/Config';
+import Util from '#server/Util';
+import * as Packets from '#server/Packets';
+import * as Errors from '#config/Errors';
+import User from '#user/User';
 
-class PropHuntUserList {
+class UserList {
 	users = [];
 	uuidMap = {}; // a list of uuids to usernames
 	regionMap = {}; // a list of regions with users inside them
@@ -85,7 +85,7 @@ class PropHuntUserList {
 					else */
 
 					if (Util.isValidWorld(worldNumber)) {
-						const user = new PropHuntUser(username, worldNumber);
+						const user = new User(username, worldNumber);
 						userId = user.id;
 						// cycle numeric id's for use in packets to save bandwidth vs sending the username
 						const numericId = this.recycledIDs.length > 0 ? this.recycledIDs.shift() : this.nextId++;
@@ -250,4 +250,4 @@ class PropHuntUserList {
 	}
 }
 
-module.exports = PropHuntUserList;
+export default UserList;

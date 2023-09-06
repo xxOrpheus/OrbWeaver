@@ -1,9 +1,9 @@
-const Packet = {};
-const PlayerUpdate = {};
+export const Packet = {};
+export const PlayerUpdate = {};
 
 //TODO: RSA Encryption for all packets
 
-const Packets = [
+export const Packets = [
 	// order is protocol sensitive but that's ok , just share this list with the client.
 	"USER_LOGIN",
 	"USER_GET_JWT",
@@ -17,7 +17,7 @@ const Packets = [
 	"GROUP_START_GAME", // TODO: Start the game
 	"GROUP_END_GAME", // TODO: End the game
 	"GROUP_SET_STAGE", // TODO: Set the play area
-	
+
 	"PLAYER_LIST",
 	"PLAYER_UPDATE", // PLAYER_UPDATE opcode is followed by PlayerUpdate type found below
 
@@ -28,13 +28,13 @@ Packets.forEach((action, index) => {
 	Packet[action] = index;
 });
 
-const PlayerUpdates = ["PROP", "LOCATION", "TEAM", "STATUS"];
+export const PlayerUpdates = ["MODEL", "LOCATION"];
 
 PlayerUpdates.forEach((action, index) => {
 	PlayerUpdate[action] = index;
 });
 
-utf8Deserialize = (message, size, offset, remote) => {
+export const utf8Deserialize = (message, size, offset, remote) => {
 	const sizeBuffer = [];
 	for (let i = 0; i < size; i++) {
 		sizeBuffer.push(message.readUInt8(offset));
@@ -49,7 +49,7 @@ utf8Deserialize = (message, size, offset, remote) => {
 	return { data, offset };
 };
 
-utf8Serialize = (buffer) => {
+export const utf8Serialize = (buffer) => {
 	const packet = [];
 	let sizeBuffer = [];
 	for (const data in buffer) {
@@ -61,4 +61,4 @@ utf8Serialize = (buffer) => {
 	return { data: packet, size: sizeBuffer };
 };
 
-module.exports = { Packets, Packet, PlayerUpdates, PlayerUpdate, utf8Deserialize, utf8Serialize };
+export default Packets;

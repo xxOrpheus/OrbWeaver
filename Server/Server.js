@@ -1,15 +1,16 @@
-const PropHuntGroupList = require("./PropHuntGroupList.js");
-const PropHuntUserList = require("./PropHuntUserList.js");
-const GameTick = require("./GameTick.js");
+import GroupList from '#group/GroupList';
+import UserList from '#user/UserList';
+import GameTick from '#world/GameTick';
 
-const dgram = require("dgram");
-const Config = require("./Config.js");
-const Packets = require("./Packets.js");
-const Errors = require("./Errors.js");
+import dgram from 'dgram';
+import Config from '#config/Config';
+import * as Packets from '#server/Packets';
+//import * as Errors from '#config/Errors';
 
-const JWT = require("jsonwebtoken");
+import JWT from 'jsonwebtoken';
 
-class PropHuntServer {
+
+class Server {
 	// TODO: Implement AES encryption or some other standard
 	packetTimes = new Map();
 
@@ -29,13 +30,13 @@ class PropHuntServer {
 		});
 
 		this.server.on("listening", () => {
-			this.log("Prop hunt server started");
+			this.log("OrbWeaver server started");
 		});
 
 		this.server.bind(Config.SERVER_PORT);
 
-		this.groups = new PropHuntGroupList(this);
-		this.users = new PropHuntUserList(this);
+		this.groups = new GroupList(this);
+		this.users = new UserList(this);
 		this.gametick = new GameTick(this);
 	}
 
@@ -55,8 +56,6 @@ class PropHuntServer {
 			}
 
 			offset++;
-			//console.log("opcode " + opCode);
-			//console.log("data " + message);
 			let token = Packets.utf8Deserialize(message, 1, offset, remote); // the next part is the (token size+)JWT token, might not be signed so we handle that in the following calls 
 			if (token.data.length > 0) {
 				offset = token.offset;
@@ -67,10 +66,6 @@ class PropHuntServer {
 							await this.users.login(message, offset, remote, token).then((res) => {
 								//console.log(res);
 							});
-							//if(Errors.Errors[returnValue]) {
-							//	console.log("error: ",Errors.Error[returnValue]);
-							//}
-							//console.log(returnValue);
 							break;
 
 						case Packets.Packet.USER_LOGOUT:
@@ -136,13 +131,17 @@ class PropHuntServer {
 	}
 
 	log(message) {
-		const address = this.server.address();
-		console.log(`[\x1b[34m${address.address}\x1b[39m:\x1b[37m${address.port}\x1b[39m]: \x1b[32m${message}\x1b[39m`);
+		const timestamp = new Date().toISOString();
+		console.log(`[\x1b[34m${timestamp}\x1b[39m]: \x1b[32m${message}\x1b[39m`);
 	}
 
 	debug(message) {
 		if(Config.VERBOSITY > 1) {
-			this.log(`\x1b[34m[DEBUG] ${message}`);
+			let line = "";
+			if(message.stack) { // get the line the error occured on 
+				line = message.stack.split('\n')[1].trim() + ": ";
+			}
+			this.log(`\x1b[34m[DEBUG]\x1b[31m ${line}\x1b[33m${message}`);
 		}
 	}
 
@@ -171,4 +170,4 @@ class PropHuntServer {
 	}
 }
 
-module.exports = PropHuntServer;
+export default Server;

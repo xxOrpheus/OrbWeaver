@@ -1,9 +1,9 @@
-const PropHuntGroup = require("./PropHuntGroup.js");
-const Packets = require("./Packets.js");
-const Errors = require("./Errors.js");
-const Util = require("./Util.js");
+import Group from '#group/Group';
+import * as Packets from '#server/Packets';
+import * as Errors from '#config/Errors';
+import Util from '#server/Util';
 
-class PropHuntGroupList {
+class GroupList {
 	server = null;
 
 	constructor(server) {
@@ -20,7 +20,7 @@ class PropHuntGroupList {
 			const world = users.users[userId].world;
 			if (Util.isValidWorld(world)) {
 				if (!this.groups[userId]) {
-					this.groups[userId] = new PropHuntGroup(userId, world);
+					this.groups[userId] = new Group(userId, world);
 					const groupId = userId; // just to improve readability lol
 					// add the creator to the list of users -- group ID is synonymous with the user ID
 					this.server.log(`${users.users[userId].username} has created a group (${userId})`);
@@ -180,4 +180,4 @@ class PropHuntGroupList {
 	}
 }
 
-module.exports = PropHuntGroupList;
+export default GroupList;

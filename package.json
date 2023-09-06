@@ -1,10 +1,30 @@
 {
-  "dependencies": {
-    "argon2": "^0.31.0",
-    "bytebuffer": "^5.0.1",
-    "express": "^4.18.2",
-    "express-rate-limit": "^6.9.0",
-    "jsonwebtoken": "^9.0.1",
-    "uuid": "^9.0.0"
-  }
+	"dependencies": {
+		"argon2": "^0.31.0",
+		"bytebuffer": "^5.0.1",
+		"express": "^4.18.2",
+		"express-rate-limit": "^6.9.0",
+		"jsonwebtoken": "^9.0.1",
+		"uuid": "^9.0.0"
+	},
+	"imports": {
+		"#server/*": "./Server/*.js",
+		"#user/*": "./User/*.js",
+		"#group/*": "./Group/*.js",
+		"#world/*": "./World/*.js",
+		"#updates/*": "./Updates/*.js",
+		"#config/*": "./Config/*.js"
+	},
+	"name": "orbweaver",
+	"version": "0.0.1",
+	"description": "a network overlay for runelite to create custom multiplayer games",
+	"main": "index.js",
+	"type": "module",
+	"keywords": [
+		"runescape",
+		"old school runescape",
+		"runelite"
+	],
+	"author": "david harris",
+	"license": "ISC"
 }

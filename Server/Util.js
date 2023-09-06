@@ -1,5 +1,6 @@
-const argon2 = require("argon2");
-const Config = require("./Config.js");
+import argon2 from 'argon2';
+import Config from '#config/Config';
+
 
 class Util {
 	static currentTime() {
@@ -62,4 +63,4 @@ class Util {
 	}
 }
 
-module.exports = Util;
+export default Util;
