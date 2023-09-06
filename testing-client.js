@@ -24,6 +24,7 @@ import * as Errors from '#config/Errors';
 let jwt = "unauthorized";
 let groupId;
 login("yaaaaa", "password", 420);
+console.log(Errors.Errors[2]);
 client.on("message", function (message, remote) {
 	let offset = 0;
 	const action = message.readUInt8(0);
@@ -44,6 +45,8 @@ client.on("message", function (message, remote) {
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
 		//joinGroup("34ca61c6-9b41-4def-b510-f395d5268f0c");
 		updateLocation(1234, 5678, 1, 2048);
+		leaveGroup(jwt);
+		logout();
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {
 		let data = message.readUint16BE(offset);
@@ -100,6 +103,11 @@ function login(username, password, world) {
 	const worldBuffer = Buffer.alloc(2);
 	worldBuffer.writeUInt16BE(world, 0);
 	packet.push(sizeBuffer, username, password, worldBuffer);
+	sendPacket(packet);
+}
+
+function logout() {
+	const packet = createPacket(Packets.Packet.USER_LOGOUT, jwt);
 	sendPacket(packet);
 }
 

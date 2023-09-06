@@ -1,5 +1,5 @@
-export const Error = {};
-const Errors = [
+
+export const Errors = [
 	"INVALID_USERNAME",
 	"INVALID_PASSWORD",
 	"INVALID_LOGIN",
@@ -14,8 +14,3 @@ const Errors = [
 	"SERVER_FULL"
 ];
 
-Errors.forEach((error, errorCode) => {
-	Error[error] = errorCode;
-});
-
-export default Errors

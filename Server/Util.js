@@ -4,14 +4,16 @@ import Colors from '#config/Colors';
 
 class Util {
 	static log(message) {
-		const timestamp = new Date().toISOString();
-		console.log(`[${Colors.BLUE}${timestamp}${Colors.RESET}]: ${Colors.GREEN}${message}${Colors.RESET}`);
+		if(Config.VERBOSITY > 0) {
+			const timestamp = new Date().toISOString();
+			console.log(`[${Colors.BLUE}${timestamp}${Colors.RESET}]: ${Colors.GREEN}${message}${Colors.RESET}`);
+		}
 	}
 
 	static debug(message) {
 		if (Config.VERBOSITY > 1) {
 			let line = "";
-			if (message.stack) {
+			if (message && message.stack) {
 				// get the line the error occured on
 				line = message.stack.split("\n")[1].trim() + ": ";
 			}

@@ -1,4 +1,5 @@
 import WorldPoint from '#world/WorldPoint';
+import Util from "#server/Util";
 
 export class PlayerLocation {
 	static update(tick, user, message, offset) {
@@ -37,7 +38,7 @@ export class PlayerLocation {
 			tick.server.users.setNeedsUpdate(user.id);
 		}
 		tick.server.users.users[user.id].location = location;
-		tick.server.debug(`${user.username} new location: ${x} ${y} ${z} ${orientation}`);
+		Util.debug(`${user.username} new location: ${x} ${y} ${z} ${orientation}`);
 	}
 }
 

@@ -1,5 +1,8 @@
 import GroupList from "#group/GroupList";
 import UserList from "#user/UserList";
+
+
+
 import GameTick from "#world/GameTick";
 
 import dgram from "dgram";
@@ -8,6 +11,7 @@ import Colors from '#config/Colors';
 
 import Util from '#server/Util';
 import * as Packets from "#server/Packets";
+
 //import * as Errors from '#config/Errors';
 
 import JWT from "jsonwebtoken";
@@ -111,6 +115,7 @@ class Server {
 							break;
 
 						case Packets.Packet.USER_LOGOUT:
+							//this.users.logout(message, offset, remote, token);
 							this.users.logout(message, offset, remote, token);
 							break;
 
@@ -119,11 +124,12 @@ class Server {
 							break;
 
 						case Packets.Packet.GROUP_JOIN:
-							this.users.addToGroup(message, offset, remote, token);
+							//this.users.addToGroup(message, offset, remote, token);
+							this.users.joinGroup(message, offset, remote, token)
 							break;
 
 						case Packets.Packet.GROUP_LEAVE:
-							this.users.removeFromGroup(message, offset, remote, token);
+							this.users.leaveGroup(message, offset, remote, token);
 							break;
 
 						case Packets.Packet.PLAYER_UPDATE:
@@ -133,8 +139,7 @@ class Server {
 				}
 			}
 		} catch (error) {
-			this.debug(error);
-			console.error(error);
+			Util.debug(error);
 			// this.handleError ?
 		}
 	}

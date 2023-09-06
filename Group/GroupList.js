@@ -42,7 +42,7 @@ class GroupList {
 				this.server.users.users[userId].groupId = groupId;
 				this.server.users.users[userId].status = 0;
 				this.server.users.users[userId].team = 0;
-				this.groups[groupId].users.push(userId); // add the user's id to the group user list
+				this.groups[groupId].users[userId] = userId; // add the user's id to the group user list
 				this.sendGroupInfo(userId, groupId);
 				//this.sendUserList(userId, groupId);
 				this.server.users.setNeedsUpdate(userId); // needsUpdate flag will always send the user list for the region they're in
@@ -59,18 +59,18 @@ class GroupList {
 			if (this.groups[groupId].users[userId]) {
 				this.server.users.users[userId].groupId = "";
 				delete this.groups[groupId].users[userId];
-				this.server.debug(`Attempting to remove user ${this.server.users.users[userId].username} from a group`);
+				Util.debug(`Attempting to remove user ${this.server.users.users[userId].username} from a group`);
 				// if no users are in the group we can safely remove the entire group
 				if (this.groups[groupId].users.length < 1) {
-					this.server.debug(`[${groupId}] No users left in group, purging...`);
+					Util.debug(`[${groupId}] No users left in group, purging...`);
 					delete this.groups[groupId];
 				}
 			} else {
-				this.server.debug("user was not in group, cannot remove", groupId, userId);
+				Util.debug("user was not in group, cannot remove", groupId, userId);
 				return Errors.Error.ALREADY_IN_GROUP;
 			}
 		} else {
-			this.server.debug("error removing user from group", this.groups[groupId], this.server.users.users[userId], this.server.users.users[userId].groupId == groupId);
+			Util.debug("error removing user from group", this.groups[groupId], this.server.users.users[userId], this.server.users.users[userId].groupId == groupId);
 		}
 	}
 
@@ -98,7 +98,7 @@ class GroupList {
 		setup.writeUInt8(updateType, 0);
 		setup.writeUInt16BE(updateUser.numericId, 1);
 		updatePacket.push(setup);
-		//this.server.debug(`sending ${this.server.users.users[userToUpdateId].username}'s ${Packets.PlayerUpdates[updateType]} update to ${this.server.users.users[userToReceiveUpdateId].username}`);
+		//Util.debug(`sending ${this.server.users.users[userToUpdateId].username}'s ${Packets.PlayerUpdates[updateType]} update to ${this.server.users.users[userToReceiveUpdateId].username}`);
 		if (updateType == Packets.PlayerUpdate.LOCATION) {
 			let updateLocation = updateUser.location;
 			let locationBuffer = Buffer.alloc(2 + 2 + 1 + 2); // 2 x 2 y 1 z 2 orientation

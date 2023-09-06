@@ -28,7 +28,7 @@ class GameTick {
 			//}, this.garbageCollectorFreq);
 			this.running = true;
 		} catch (error) {
-			this.server.debug(error);
+			Util.debug(error);
 		}
 	}
 

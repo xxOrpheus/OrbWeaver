@@ -17,7 +17,7 @@ const Config = {
 	DUPLICATE_PACKET_THROTTLE_LIMIT: 1, // Maximum allowed duplicate packets per tick
 
 	// Logging
-	VERBOSITY: 2, // Logging verbosity (1 = minimal, > 1 = debug)
+	VERBOSITY: 2, // Logging verbosity (0 = off, 1 = info, > 1 = debug)
 
 	// Session Settings
 	LOGOUT_TIMER: 60 * 1000 * 5, // Session timeout in milliseconds
@@ -25,7 +25,7 @@ const Config = {
 	// Optional Feature
 	MASTER_SERVER: "127.0.0.1", // Master server address
 	MASTER_SERVER_PORT: 4201,
-	POLL_MASTER_SERVER: true, // Enable polling the master server
+	POLL_MASTER_SERVER: false, // Enable polling the master server
 };
 
 export default Config;
