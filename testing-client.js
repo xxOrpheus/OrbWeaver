@@ -23,7 +23,7 @@ const Errors = require("./Errors.js");
 //console.log(unmasked);
 let jwt = "unauthorized";
 let groupId;
-login("ya", "password", 420);
+login("yaaaaa", "password", 420);
 client.on("message", function (message, remote) {
 	let offset = 0;
 	const action = message.readUInt8(0);
@@ -42,7 +42,7 @@ client.on("message", function (message, remote) {
 		jwt = userDetails[0];
 		//createGroup();
 		//setProp(jwt, Props.Prop.WORLD_OBJECT, 1234);
-		joinGroup("0d63a1de-4e8b-44e4-9ec1-2d0c8f8b66bc");
+		joinGroup("34ca61c6-9b41-4def-b510-f395d5268f0c");
 		updateLocation(1234, 5678, 1, 2048);
 		//leaveGroup(jwt);
 	} else if (action == Packets.Packet.ERROR_MESSAGE) {

@@ -89,7 +89,7 @@ class PropHuntGroupList {
 			return Errors.Error.NO_CONNECTION_AVAILABLE;
 		}
 		// they don't need to update themselves that would be ridiculous
-		if(userToReceiveUpdateId == userToUpdateId) {
+		if (userToReceiveUpdateId == userToUpdateId) {
 			return;
 		}
 
@@ -100,10 +100,9 @@ class PropHuntGroupList {
 		setup.writeUInt16BE(updateUser.numericId, 1);
 		updatePacket.push(setup);
 		//this.server.debug(`sending ${this.server.users.users[userToUpdateId].username}'s ${Packets.PlayerUpdates[updateType]} update to ${this.server.users.users[userToReceiveUpdateId].username}`);
-		if(updateType == Packets.PlayerUpdate.LOCATION) {
+		if (updateType == Packets.PlayerUpdate.LOCATION) {
 			let updateLocation = updateUser.location;
 			let locationBuffer = Buffer.alloc(2 + 2 + 1 + 2); // 2 x 2 y 1 z 2 orientation
-			console.log("coord", updateLocation.getX(), updateLocation.getY(), updateLocation.getZ(), updateUser.orientation);
 			locationBuffer.writeUInt16BE(updateLocation.getX(), 0);
 			locationBuffer.writeUInt16BE(updateLocation.getY(), 2);
 			locationBuffer.writeUInt8(updateLocation.getZ(), 4);
@@ -115,61 +114,48 @@ class PropHuntGroupList {
 
 	// sends the group player list
 	sendUserList(userId, groupId, regionUpdate) {
-		if (!this.server.users.users[userId]?.remote) {
-			return Errors.Error.INVALID_USER_ID || Errors.Error.NO_CONNECTION_AVAILABLE;
+		const user = this.server.users.users[userId];
+		const group = this.server.groups.groups[groupId];
+
+		if (!user?.remote) {
+			return Errors.Error.INVALID_USER;
 		}
-		if (!this.server.groups.groups[groupId]) {
+
+		if (!group) {
 			return Errors.Error.INVALID_GROUP;
 		}
-		const packet = this.server.createPacket(Packets.Packet.PLAYER_LIST);
-		const groupUsers = this.groups[groupId].users;
-		if (groupUsers.length > 0) {
-			const remote = this.server.users.users[userId].remote;
-			// calculate the total size needed for the buffer
-			let totalSize = 0;
-			for (const groupUserId of groupUsers) {
-				// we don't need to send the user to themselves, save the  bandwidth
-				if(groupUserId == userId) {
-					continue;
-				}
-				let groupUser = this.server.users.users[groupUserId];
-				totalSize += 3 + groupUser.username.length; // allocate 2 bytes (uint16) + 1 bytes (uint8) + username length
-			}
-			// allocate the entire buffer
-			const userBuffer = Buffer.alloc(totalSize);
 
-			let offset = 0;
-			for (const groupUserId of groupUsers) {
-				// we don't need to send the user to themselves, save the bandwidth
-				if(groupUserId == userId) {
-					continue;
-				}
-				// if the user doesn't exist or they don't have any location data that sucks
-				if (!this.server.users.users[groupUserId]?.regionId) {
-					continue;
-				}
-				// they're not in the same region so they don't need to know
-				if (regionUpdate && this.server.users.users[userId].regionId !== this.server.users.users[groupUserId].regionId) {
-					continue;
-				}
-				let groupUser = this.server.users.users[groupUserId];
-				userBuffer.writeUInt16BE(groupUser.numericId, offset);
-				offset += 2;
+		const remote = user.remote;
+		const groupUsers = group.users.filter((groupUserId) => groupUserId !== userId); // remove the user requesting the list to reduce bandwidth
+		let totalSize = 0;
+		const userBuffer = [];
 
+		for (const groupUserId of groupUsers) {
+			const groupUser = this.server.users.users[groupUserId];
+
+			// if this is a region specific update (regionUpdate boolean), check that the users share the same region 
+			if (groupUser?.regionId && (!regionUpdate || user.regionId === groupUser.regionId)) {
 				const usernameLength = groupUser.username.length;
-				userBuffer.writeUInt8(usernameLength, offset);
-				offset++;
+				const userData = Buffer.alloc(3 + usernameLength);
 
-				userBuffer.write(groupUser.username, offset, usernameLength);
-				offset += usernameLength;
-			}
-			if(totalSize > 0) {
-				let sizeBuffer = Buffer.alloc(2);
-				sizeBuffer.writeUInt16BE(userBuffer.length);
-				packet.push(Buffer.concat([sizeBuffer, userBuffer]));
-				this.server.sendPacket(packet, remote);
+				userData.writeUInt16BE(groupUser.numericId, 0);
+				userData.writeUInt8(usernameLength, 2);
+				userData.write(groupUser.username, 3, usernameLength);
+
+				userBuffer.push(userData);
+				totalSize += userData.length;
 			}
 		}
+
+		if (totalSize === 0) {
+			return; // no data to send
+		}
+
+		const sizeBuffer = Buffer.alloc(2);
+		sizeBuffer.writeUInt16BE(totalSize);
+		const packet = this.server.createPacket(Packets.Packet.PLAYER_LIST);
+		packet.push(Buffer.concat([sizeBuffer, ...userBuffer]));
+		this.server.sendPacket(packet, remote);
 	}
 
 	// used when a new group is created so the player knows what their group ID is for sharing.
