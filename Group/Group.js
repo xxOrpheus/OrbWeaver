@@ -1,6 +1,6 @@
 import Util from '#server/Util';
 import * as Errors from '#config/Errors';
-
+import Colors from '#config/Colors';
 import { v4 as uuidv4 } from 'uuid';
 
 uuidv4(); // ⇨ '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed'
@@ -74,7 +74,7 @@ class Group {
 	}
 
 	gameLog(msg) {
-		console.log(`\x1b[33m[\x1b[34m${this.id}\x1b[33m] (\x1b[31m${this.creator}\x1b[33m)\x1b[39m: \x1b[37m${msg}`);
+		console.log(`${Colors.YELLOW}[${Colors.BLUE}${this.id}${Colors.YELLOW}] (${Colors.RED}${this.creator}${Colors.YELLOW}): ${Colors.WHITE}${msg}${Colors.RESET}`);
 	}
 
 

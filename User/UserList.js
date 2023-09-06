@@ -1,8 +1,8 @@
-import Config from '#config/Config';
-import Util from '#server/Util';
-import * as Packets from '#server/Packets';
-import * as Errors from '#config/Errors';
-import User from '#user/User';
+import Config from "#config/Config";
+import Util from "#server/Util";
+import * as Packets from "#server/Packets";
+import * as Errors from "#config/Errors";
+import User from "#user/User";
 
 class UserList {
 	users = [];
@@ -34,6 +34,12 @@ class UserList {
 
 	async login(message, offset, remote, token) {
 		try {
+			// check if the server is full before proceeding.
+			if (this.users.length + 1 >= Config.MAX_USERS_ONLINE) {
+				this.server.sendError(Errors.Error.SERVER_FULL, remote);
+				return Errors.Error.SERVER_FULL;
+			}
+
 			const size = 2; //read username, password  (utf8)
 			const loginDetails = Packets.utf8Deserialize(message, size, offset, remote);
 			let userId, worldNumber;
@@ -76,7 +82,7 @@ class UserList {
 					worldNumber = message.readUInt16BE(offset);
 					// the following block of code might be unnecessary and actually introduce more problems than it solves, and also increases server load.
 					// let's test with out it for now
-					
+
 					/*// we don't want a valid token as this is supposed to be a new login
 					if (this.server.verifyJWT(token)) {
 						this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
@@ -104,13 +110,13 @@ class UserList {
 						return Errors.Error.INVALID_WORLD;
 					}
 				} else {
-					this.server.log(`invalid name ${JSON.stringify(username)}`);
+					Util.log(`invalid name ${JSON.stringify(username)}`);
 					this.server.sendError(Errors.Error.INVALID_NAME, remote);
 					return Errors.Error.INVALID_NAME;
 				}
 				// no error code was returned, we can safely do any final operations here:
 
-				this.server.log(`[${userId}] ${username} has logged in (World ${worldNumber})`);
+				Util.log(`[${userId}] ${username} has logged in (World ${worldNumber})`);
 			}
 		} catch (error) {
 			this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
@@ -135,7 +141,7 @@ class UserList {
 			}
 			if (this.users[userId].regionId) {
 				const regionId = this.users[userId].regionId;
-				// remove them from the regionMap so no further updates are attempted 
+				// remove them from the regionMap so no further updates are attempted
 				if (this.regionMap[regionId]?.[userId]) {
 					delete this.regionMap[regionId][userId];
 				}
@@ -176,7 +182,7 @@ class UserList {
 							this.server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
 							return Errors.Error.ALREADY_IN_GROUP;
 						} else {
-							this.server.log(`${user.username} joined group ${groupId}`);
+							Util.log(`${user.username} joined group ${groupId}`);
 							this.server.groups.addUser(groupId, token.id);
 						}
 					} else {
@@ -184,7 +190,7 @@ class UserList {
 						return Errors.Error.INVALID_PASSWORD;
 					}
 				} else {
-					this.server.log(`${user.username} tried joining invalid group ${Util.sanitize(groupId)}`);
+					Util.log(`${user.username} tried joining invalid group ${Util.sanitize(groupId)}`);
 					this.server.sendError(Errors.Error.INVALID_GROUP, remote);
 					return Errors.Error.INVALID_GROUP;
 				}
@@ -202,7 +208,7 @@ class UserList {
 			let user = this.users[token.id];
 			let groupId = user.groupId;
 			if (this.server.groups.groups[groupId].users[token.id]) {
-				this.server.log(`[${id}] ${username} left group ${groupId}`);
+				Util.log(`[${id}] ${username} left group ${groupId}`);
 				this.server.groups.removeUser(server, groupId, token.id);
 				const packet = this.server.createPacket(Packets.Packet.GROUP_LEAVE);
 				this.server.sendPacket(packet, remote);
@@ -230,7 +236,7 @@ class UserList {
 	updateJWT(userId) {
 		if (this.users[userId]?.remote) {
 			const remote = this.users[userId].remote;
-			let jwt = this.users[userId].jwt = this.server.getJWT().sign({ id: userId }, Config.JWT_SECRET_KEY);
+			let jwt = (this.users[userId].jwt = this.server.getJWT().sign({ id: userId }, Config.JWT_SECRET_KEY));
 			const actionBuffer = Buffer.alloc(1);
 			actionBuffer.writeUInt8(Packets.Packet.USER_GET_JWT, 0);
 			const jwtBuffer = Buffer.from(jwt, "utf8");

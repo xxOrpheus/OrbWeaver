@@ -10,7 +10,8 @@ const Errors = [
 	"INVALID_MODEL_TYPE",
 	"INVALID_UPDATE",
 	"INVALID_USER_ID",
-	"NO_CONNECTION_AVAILABLE"
+	"NO_CONNECTION_AVAILABLE",
+	"SERVER_FULL"
 ];
 
 Errors.forEach((error, errorCode) => {

@@ -1,9 +1,8 @@
 import * as Packets from '#server/Packets';
 import Config from '#config/Config';
-import * as Errors from '#config/Errors';
 import PlayerLocation from '#updates/PlayerLocation';
 import PlayerModel from '#updates/PlayerModel';
-
+import Util from '#server/Util';
 
 class GameTick {
 	tick = null;
@@ -15,7 +14,7 @@ class GameTick {
 		this.server = server;
 		this.initializeUpdateQueue();
 		this.startTick();
-		this.server.log("GameTick initialized...");
+		Util.log("GameTick initialized...");
 	}
 
 	startTick() {

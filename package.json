@@ -13,7 +13,8 @@
 		"#group/*": "./Group/*.js",
 		"#world/*": "./World/*.js",
 		"#updates/*": "./Updates/*.js",
-		"#config/*": "./Config/*.js"
+		"#config/*": "./Config/*.js",
+		"#masterserver/*": "./MasterServer/*.js"
 	},
 	"name": "orbweaver",
 	"version": "0.0.1",

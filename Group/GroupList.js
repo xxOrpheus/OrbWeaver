@@ -14,16 +14,15 @@ class GroupList {
 	createGroup(message, offset, remote, token) {
 		const users = this.server.getUsers();
 		const verify = this.server.verifyJWT(token);
-		const userId = verify.id;
-		if (users.users[userId] != null && verify) {
-			// TODO: add more sanity checks/verification to createGroup
+		if (verify?.id && users.users[verify.id]) { // they need to be logged in to create a group
+			const userId = verify.id;
 			const world = users.users[userId].world;
-			if (Util.isValidWorld(world)) {
-				if (!this.groups[userId]) {
+			if (Util.isValidWorld(world)) { // make sure its a valid runescape world 
+				if (!this.groups[userId]) { // check that the user hasn't created a group already 
 					this.groups[userId] = new Group(userId, world);
 					const groupId = userId; // just to improve readability lol
 					// add the creator to the list of users -- group ID is synonymous with the user ID
-					this.server.log(`${users.users[userId].username} has created a group (${userId})`);
+					Util.log(`${users.users[userId].username} has created a group (${userId})`);
 					this.addUser(groupId, userId);
 				} else {
 					this.server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
@@ -46,7 +45,7 @@ class GroupList {
 				this.groups[groupId].users.push(userId); // add the user's id to the group user list
 				this.sendGroupInfo(userId, groupId);
 				//this.sendUserList(userId, groupId);
-				this.server.users.setNeedsUpdate(userId);
+				this.server.users.setNeedsUpdate(userId); // needsUpdate flag will always send the user list for the region they're in
 			} else {
 				return Errors.Error.ALREADY_IN_GROUP;
 			}

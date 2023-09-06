@@ -1,3 +1,5 @@
+
+
 export const Packet = {};
 export const PlayerUpdate = {};
 
@@ -22,6 +24,10 @@ export const Packets = [
 	"PLAYER_UPDATE", // PLAYER_UPDATE opcode is followed by PlayerUpdate type found below
 
 	"ERROR_MESSAGE",
+
+	"MASTER_SERVER_POLL", 
+	"MASTER_SERVER_LIST",
+	"MASTER_SERVER_INFO"
 ];
 
 Packets.forEach((action, index) => {
@@ -60,5 +66,26 @@ export const utf8Serialize = (buffer) => {
 	sizeBuffer = Buffer.from(sizeBuffer);
 	return { data: packet, size: sizeBuffer };
 };
+
+export class PackMan {
+	static createPacket(packet) {
+		const opCodeBuffer = Buffer.alloc(1); // first byte is always the opcode 
+		opCodeBuffer.writeUInt8(packet, 0);
+		return [opCodeBuffer];
+	}
+
+	static sendPacket(server, packet, remote) {
+		if(!remote.address || !remote.port) {
+			return false;
+		}
+
+		packet = Buffer.concat(packet);
+		server.send(packet, 0, packet.length, remote.port, remote.address, (err) => {
+			if (err) {
+				console.error("Error sending packet:", err);
+			}
+		});
+	}
+}
 
 export default Packets;
