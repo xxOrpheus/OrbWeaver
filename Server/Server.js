@@ -19,7 +19,6 @@ import JWT from "jsonwebtoken";
 
 class Server {
 	// TODO: Implement AES encryption or some other standard
-	packetTimes = new Map();
 
 	server;
 	users;
@@ -46,6 +45,7 @@ class Server {
 
 		this.groups = new GroupList(this);
 		this.users = new UserList(this);
+		this.world = new World(this);
 		this.gametick = new GameTick(this);
 	}
 	
@@ -71,8 +71,7 @@ class Server {
 		const bufferSize = 1 + 1 + 1 + Buffer.from(serverName).length; // 1 byte players online, 1 byte player limit, 1 byte server name length + server name
 		const serverInfo = Buffer.alloc(bufferSize);
 		let offset = 0;
-		console.log(this.users.users.length);
-		serverInfo.writeUInt8(this.users.users.length, offset);
+		serverInfo.writeUInt8(this.users.usersOnlineCount, offset);
 		offset += 1;
 
 		serverInfo.writeUInt8(Config.MAX_USERS_ONLINE, offset);

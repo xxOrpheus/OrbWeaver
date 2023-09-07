@@ -12,6 +12,7 @@
 		"#user/*": "./User/*.js",
 		"#group/*": "./Group/*.js",
 		"#world/*": "./World/*.js",
+		"#world/objects/*": "./World/Objects/*.js",
 		"#updates/*": "./Updates/*.js",
 		"#config/*": "./Config/*.js",
 		"#masterserver/*": "./MasterServer/*.js"

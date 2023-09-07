@@ -63,6 +63,7 @@ class GameTick {
 						// i guess we actually only need the model and location to be updated, the rest only the server needs to know
 						this.updateQueue[Packets.PlayerUpdate.LOCATION].push(userInSameRegionId);
 						//this.updateQueue[Packets.PlayerUpdate.MODEL].push(userInSameRegionId);
+						
 					}
 				}
 			}
