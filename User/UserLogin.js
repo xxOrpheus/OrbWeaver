@@ -89,7 +89,7 @@ export class UserLogin {
 					return Error.INVALID_NAME;
 				}
 				// no error code was returned, we can safely do any final operations here:
-
+				server.users.usersOnlineCount++;
 				Util.log(`[${userId}] ${username} has logged in (World ${worldNumber})`);
 			}
 		} catch (error) {

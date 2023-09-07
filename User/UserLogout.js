@@ -27,6 +27,15 @@ class UserLogout {
 			delete server.users.usersOnline[username];
 			delete server.users.users[userId];
             Util.log(username + " has logged out");
+			server.users.usersOnlineCount--;
+			if(server.users.usersOnlineCount < 0) {
+				server.users.usersOnlineCount = 0;
+			}
+			
+			if(remote.address && remote.port) { // we should tell the client they've been logged out (to update UI etc)
+				let packet = server.createPacket(Packets.Packet.LOGGED_OUT);
+				server.sendPacket(packet, remote);
+			}
 		}
 	}
 }

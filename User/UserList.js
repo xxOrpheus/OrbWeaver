@@ -22,6 +22,7 @@ class UserList {
 		this.uuidMap = {};
 		this.recycledIDs = [];
 		this.usersOnline = [];
+		this.usersOnlineCount = 0; // use a separate variable to keep track so we don't have to do costly array calculations
 		this.users = [];
 	}
 

@@ -6,7 +6,6 @@ import Util from "#server/Util";
 
 class GameTick {
 	tick = null;
-	//garbageCollectorFreq = this.freq * 500; // collect every 500 ticks (5 minutes)
 	server = null;
 	updateQueue = {};
 
@@ -22,10 +21,18 @@ class GameTick {
 			// TODO: we could put this tick to rest when there is nothing happening (no players in games)
 			this.tick = setInterval(() => this.cycle(), Config.TICK_LENGTH);
 
-			// TODO: we should check if any memory is being wasted (it shouldn't be if we do everything right, this might never be necessary)
-			//this.garbageCollector = setInterval(() => {
-			//	// do clean up
-			//}, this.garbageCollectorFreq);
+			// TODO: we should check if any memory is being wasted (ghost players, etc)
+			this.garbageCollector = setInterval(() => {
+				for(const userId in this.server.users.users) {
+					let active = this.server.users.users[userId].active;
+					let jwt = this.server.users.users[userId].jwt;
+					let remote = this.server.users.users[userId].remote;
+					let lastActive = Util.currentTime() - active;
+					if(!active || lastActive > Config.LOGOUT_TIMER) {
+						this.server.users.logout(null, null, remote, jwt);
+					}
+				}
+			}, Config.GARBAGE_COLLECTION_FREQ);
 			this.running = true;
 		} catch (error) {
 			Util.debug(error);

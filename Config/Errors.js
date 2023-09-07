@@ -15,6 +15,5 @@ export const Errors = [
 ];
 
 Errors.forEach((error, errorCode) => {
-	console.log(error, errorCode);
 	Error[error] = errorCode;
 });

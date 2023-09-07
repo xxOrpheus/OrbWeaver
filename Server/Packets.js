@@ -10,6 +10,7 @@ export const Packets = [
 	"USER_LOGIN",
 	"USER_GET_JWT",
 	"USER_LOGOUT",
+	"LOGGED_OUT",
 
 	"GROUP_NEW",
 	"GROUP_JOIN",
@@ -27,7 +28,7 @@ export const Packets = [
 
 	"MASTER_SERVER_POLL", 
 	"MASTER_SERVER_LIST",
-	"MASTER_SERVER_INFO"
+	"SERVER_INFO"
 ];
 
 Packets.forEach((action, index) => {

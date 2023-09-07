@@ -43,19 +43,19 @@ class Server {
 		});
 
 		this.server.bind(Config.SERVER_PORT);
-		//Util.debug(Errors.Error[Error.INVALID_USER]);
+
 		this.groups = new GroupList(this);
 		this.users = new UserList(this);
 		this.gametick = new GameTick(this);
 	}
 	
+	// poll the master server to register it to the list -- toggle in Config.js (disabled by default)
 	pollMasterServer() {
 		if (Config.POLL_MASTER_SERVER == true) {
 			let remote = { address: Config.MASTER_SERVER, port: Config.MASTER_SERVER_PORT };
 			Util.log(`${Colors.MAGENTA}Contacting master server... (${Colors.WHITE}${Config.MASTER_SERVER}:${Config.MASTER_SERVER_PORT}${Colors.MAGENTA})`);
 			let packet = this.createPacket(Packets.Packet.MASTER_SERVER_POLL);
 			this.sendPacket(packet, remote);
-			this.sendServerInfo(remote);
 			if(!this.masterServerPoller) {
 				this.masterServerPoller = setInterval(() => this.pollMasterServer(), 30 * 60 * 1000);
 			}
@@ -63,7 +63,7 @@ class Server {
 	}
 
 	sendServerInfo(remote) { // send basic information about this server: players online, player limit, and server name.
-		let packet = this.createPacket(Packets.Packet.MASTER_SERVER_INFO);
+		let packet = this.createPacket(Packets.Packet.SERVER_INFO);
 		let serverName = Config.SERVER_NAME;
 		if (serverName.length > 32) {
 			serverName = serverName.substring(0, 32);
@@ -71,7 +71,8 @@ class Server {
 		const bufferSize = 1 + 1 + 1 + Buffer.from(serverName).length; // 1 byte players online, 1 byte player limit, 1 byte server name length + server name
 		const serverInfo = Buffer.alloc(bufferSize);
 		let offset = 0;
-		serverInfo.writeUInt8(this.users.length, offset);
+		console.log(this.users.users.length);
+		serverInfo.writeUInt8(this.users.users.length, offset);
 		offset += 1;
 
 		serverInfo.writeUInt8(Config.MAX_USERS_ONLINE, offset);
@@ -93,7 +94,7 @@ class Server {
 				this.debug(`${Colors.RED}Malformed packet: Insufficient data length`);
 				return;
 			}
-			// TODO: throttle/rate limit packets
+			// TODO: throttle/rate limit some packets
 			let offset = 0;
 
 			const opCode = message.readUInt8(0); // first byte is op code, it could probably be trimmed from the packet but we will leave it anyways
@@ -109,6 +110,10 @@ class Server {
 				token = token.data[0];
 				if (Packets.Packets[opCode] != null) {
 					switch (opCode) {
+						case Packets.Packet.SERVER_INFO: // requested after the user logs in, or when reading the master server list 
+							this.sendServerInfo(remote);
+							break;
+
 						case Packets.Packet.USER_LOGIN:
 							await this.users.login(message, offset, remote, token).then((res) => {
 							});
@@ -119,7 +124,6 @@ class Server {
 							break;
 
 						case Packets.Packet.GROUP_NEW:
-							console.log("creategroup");
 							this.groups.createGroup(message, offset, remote, token);
 							break;
 

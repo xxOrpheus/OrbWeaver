@@ -1,32 +1,33 @@
-import argon2 from 'argon2';
-import Config from '#config/Config';
-import Colors from '#config/Colors';
+import argon2 from "argon2";
+import Config from "#config/Config";
+import Colors from "#config/Colors";
 
 class Util {
-	static log(message) {
-		if(Config.VERBOSITY > 0) {
+	static log(...args) {
+		if (Config.VERBOSITY > 0) {
 			const timestamp = new Date().toISOString();
+			const message = args.join(" "); // Join all arguments with a space
 			console.log(`[${Colors.BLUE}${timestamp}${Colors.RESET}]: ${Colors.GREEN}${message}${Colors.RESET}`);
 		}
 	}
 
-	static debug(message) {
+	static debug(...args) {
 		if (Config.VERBOSITY > 1) {
 			let line = "";
-			if (message && message.stack) {
-				// get the line the error occured on
-				line = message.stack.split("\n")[1].trim() + ": ";
+			if (args[0] && args[0].stack) {
+				// Get the line the error occurred on
+				line = args[0].stack.split("\n")[1].trim() + ": ";
 			}
+			const message = args.join(" "); // Exclude the first argument (error) and join the rest
 			this.log(`${Colors.CYAN}[DEBUG] ${Colors.BRIGHT_RED}${line}${Colors.YELLOW}${message}`);
 		}
 	}
-
 
 	static currentTime() {
 		return Math.floor(Date.now() / 1000);
 	}
 
-	// should be 12 characters but i think encoding was making it push over that limit sometimes so this will be fine at 16 
+	// should be 12 characters but i think encoding was making it push over that limit sometimes so this will be fine at 16
 	static isValidName(name) {
 		const regex = /^[a-zA-Z\d\-_\s]{1,16}$/i;
 		return regex.test(name);
