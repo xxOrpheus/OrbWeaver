@@ -1,4 +1,4 @@
-
+export const Error = {};
 export const Errors = [
 	"INVALID_USERNAME",
 	"INVALID_PASSWORD",
@@ -14,3 +14,7 @@ export const Errors = [
 	"SERVER_FULL"
 ];
 
+Errors.forEach((error, errorCode) => {
+	console.log(error, errorCode);
+	Error[error] = errorCode;
+});

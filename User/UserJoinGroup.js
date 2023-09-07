@@ -1,4 +1,4 @@
-import * as Errors from "#config/Errors";
+import {Errors, Error} from "#config/Errors";
 import * as Packets from "#server/Packets";
 import Util from "#server/Util";
 
@@ -9,7 +9,7 @@ class UserJoinGroup {
 		const groupDetails = Packets.utf8Deserialize(message, sizeBuffer, offset, remote);
 		offset = groupDetails.offset;
 		if (!(token && groupDetails.data.length >= sizeBuffer)) {
-			return Errors.Error.INVALID_GROUP;
+			return Error.INVALID_GROUP;
 		}
 		const groupId = groupDetails.data[0];
 		let authorized = true; // default true, only subject to change if group.locked == true
@@ -23,31 +23,31 @@ class UserJoinGroup {
 						authorized = Util.verifyPasscode(server.groups.groups[groupId].password, passwordInput);
 						const passwordSize = message.readUInt16BE(offset);
 						offset += 2;
-						const passwordInput = Packets.utf8Deserialize(message, passwordSize, offset, remote);
+						const passwordInput = Packets.utf8Deserialize(message, 1, offset, remote);
 						offset = passwordInput.offset;
 					}
 
 					if (authorized) {
 						if (server.groups.groups[groupId].users[user.id]) {
 							// the user is already in the group
-							server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
-							return Errors.Error.ALREADY_IN_GROUP;
+							server.sendError(Error.ALREADY_IN_GROUP, remote);
+							return Error.ALREADY_IN_GROUP;
 						} else {
 							Util.log(`${user.username} joined group ${groupId}`);
 							server.groups.addUser(groupId, token.id);
 						}
 					} else {
-						server.sendError(Errors.Error.INVALID_PASSWORD, remote);
-						return Errors.Error.INVALID_PASSWORD;
+						server.sendError(Error.INVALID_PASSWORD, remote);
+						return Error.INVALID_PASSWORD;
 					}
 				} else {
 					Util.log(`${user.username} tried joining invalid group ${Util.sanitize(groupId)}`);
-					server.sendError(Errors.Error.INVALID_GROUP, remote);
-					return Errors.Error.INVALID_GROUP;
+					server.sendError(Error.INVALID_GROUP, remote);
+					return Error.INVALID_GROUP;
 				}
 			} else {
-				server.sendError(Errors.Error.INVALID_LOGIN, remote);
-				return Errors.Error.INVALID_LOGIN;
+				server.sendError(Error.INVALID_LOGIN, remote);
+				return Error.INVALID_LOGIN;
 			}
 			// no error codes returned, any final operations can be done here:
 		}

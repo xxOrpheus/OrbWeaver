@@ -7,6 +7,7 @@ import GameTick from "#world/GameTick";
 
 import dgram from "dgram";
 import Config from "#config/Config";
+import {Errors, Error} from "#config/Errors";
 import Colors from '#config/Colors';
 
 import Util from '#server/Util';
@@ -42,7 +43,7 @@ class Server {
 		});
 
 		this.server.bind(Config.SERVER_PORT);
-
+		//Util.debug(Errors.Error[Error.INVALID_USER]);
 		this.groups = new GroupList(this);
 		this.users = new UserList(this);
 		this.gametick = new GameTick(this);
@@ -110,21 +111,19 @@ class Server {
 					switch (opCode) {
 						case Packets.Packet.USER_LOGIN:
 							await this.users.login(message, offset, remote, token).then((res) => {
-								//console.log(res);
 							});
 							break;
 
 						case Packets.Packet.USER_LOGOUT:
-							//this.users.logout(message, offset, remote, token);
 							this.users.logout(message, offset, remote, token);
 							break;
 
 						case Packets.Packet.GROUP_NEW:
+							console.log("creategroup");
 							this.groups.createGroup(message, offset, remote, token);
 							break;
 
 						case Packets.Packet.GROUP_JOIN:
-							//this.users.addToGroup(message, offset, remote, token);
 							this.users.joinGroup(message, offset, remote, token)
 							break;
 
@@ -174,7 +173,7 @@ class Server {
 
 	#handleError(error) {
 		// i can fix her
-		this.debug(error);
+		Util.debug(error);
 	}
 
 	getGroups() {

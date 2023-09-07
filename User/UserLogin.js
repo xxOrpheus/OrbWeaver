@@ -1,5 +1,5 @@
 import Config from "#config/Config";
-import * as Errors from "#config/Errors";
+import {Errors, Error} from "#config/Errors";
 import * as Packets from "#server/Packets";
 import Util from "#server/Util";
 import User from "#user/User";
@@ -10,8 +10,8 @@ export class UserLogin {
 		try {
 			// check if the server is full before proceeding.
 			if (server.users.users.length + 1 >= Config.MAX_USERS_ONLINE) {
-				server.sendError(Errors.Error.SERVER_FULL, remote);
-				return Errors.Error.SERVER_FULL;
+				server.sendError(Error.SERVER_FULL, remote);
+				return Error.SERVER_FULL;
 			}
 
 			const size = 2; //read username, password  (utf8)
@@ -26,8 +26,8 @@ export class UserLogin {
 					return await Util.verifyPasscode(playerOnline.password, password).then(
 						function (result) {
 							if (result == false) {
-								server.sendError(Errors.Error.INVALID_PASSWORD, remote);
-								return Errors.Error.INVALID_PASSWORD;
+								server.sendError(Error.INVALID_PASSWORD, remote);
+								return Error.INVALID_PASSWORD;
 							} else {
 								let inactive = Util.currentTime() - playerOnline.lastActive > Config.LOGOUT_TIMER == true;
 								// verify them if they still have the JWT token from the previous session, or bypass the token if they have been inactive
@@ -45,8 +45,8 @@ export class UserLogin {
 										server.groups.sendGroupInfo(playerOnline.id, playerOnline.groupId);
 									}
 								} else {
-									server.sendError(Errors.Error.INVALID_LOGIN, remote);
-									return Errors.Error.INVALID_LOGIN;
+									server.sendError(Error.INVALID_LOGIN, remote);
+									return Error.INVALID_LOGIN;
 								}
 							}
 						}.bind(this)
@@ -59,8 +59,8 @@ export class UserLogin {
 
 					/*// we don't want a valid token as this is supposed to be a new login
     if (server.verifyJWT(token)) {
-    server.sendError(Errors.Error.INVALID_LOGIN, remote);
-    return Errors.Error.INVALID_LOGIN;
+    server.sendError(Error.INVALID_LOGIN, remote);
+    return Error.INVALID_LOGIN;
     } // make sure it is a valid world too
     else */
 
@@ -80,22 +80,22 @@ export class UserLogin {
 							server.users.updateJWT(userId);
 						});
 					} else {
-						server.sendError(Errors.Error.INVALID_WORLD, remote);
-						return Errors.Error.INVALID_WORLD;
+						server.sendError(Error.INVALID_WORLD, remote);
+						return Error.INVALID_WORLD;
 					}
 				} else {
 					Util.log(`invalid name ${JSON.stringify(username)}`);
-					server.sendError(Errors.Error.INVALID_NAME, remote);
-					return Errors.Error.INVALID_NAME;
+					server.sendError(Error.INVALID_NAME, remote);
+					return Error.INVALID_NAME;
 				}
 				// no error code was returned, we can safely do any final operations here:
 
 				Util.log(`[${userId}] ${username} has logged in (World ${worldNumber})`);
 			}
 		} catch (error) {
-			server.sendError(Errors.Error.INVALID_LOGIN, remote);
+			server.sendError(Error.INVALID_LOGIN, remote);
 			console.debug(error);
-			return Errors.Error.INVALID_LOGIN;
+			return Error.INVALID_LOGIN;
 		}
 	}
 }

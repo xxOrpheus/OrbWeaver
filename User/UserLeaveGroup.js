@@ -1,4 +1,4 @@
-import * as Errors from "#config/Errors";
+import {Errors, Error} from "#config/Errors";
 import * as Packets from "#server/Packets";
 import Util from "#server/Util";
 
@@ -19,8 +19,8 @@ class UserLeaveGroup {
 				server.sendPacket(packet, remote);
 			} else {
 				// the user is not in a group
-				server.sendError(Errors.Error.INVALID_GROUP, user.remote);
-				return Errors.Error.INVALID_GROUP;
+				server.sendError(Error.INVALID_GROUP, user.remote);
+				return Error.INVALID_GROUP;
 			}
 		} else {
 

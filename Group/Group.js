@@ -9,7 +9,7 @@ class Group {
 	#countdown = null;
 	constructor(userId, world) {
 		if (!Util.isValidWorld(world)) {
-			return Errors.Errors.INVALID_WORLD;
+			return Error.INVALID_WORLD;
 		}
 		this.creator = userId;
 		this.users = [];

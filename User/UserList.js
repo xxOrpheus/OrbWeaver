@@ -1,7 +1,7 @@
 import Config from "#config/Config";
 import Util from "#server/Util";
 import * as Packets from "#server/Packets";
-import * as Errors from "#config/Errors";
+import {Errors, Error} from "#config/Errors";
 
 import UserLogin from "#user/UserLogin";
 import UserLogout from "#user/UserLogout";
@@ -29,7 +29,7 @@ class UserList {
 		if (!this.needsUpdate[userId]) {
 			// only need to update once per queue
 			if (!this.users[userId]) {
-				return Errors.Error.INVALID_USER_ID;
+				return Error.INVALID_USER_ID;
 			}
 			this.needsUpdate.push(userId);
 		}
@@ -72,7 +72,6 @@ class UserList {
 			const jwtBuffer = Buffer.from(jwt, "utf8");
 			const sizeBuffer = Buffer.from([jwtBuffer.length]);
 			const packetBuffer = Buffer.concat([actionBuffer, sizeBuffer, jwtBuffer]);
-
 			this.server.server.send(packetBuffer, 0, packetBuffer.length, remote.port, remote.address, (err) => {
 				if (err) {
 					console.error("Error sending response:", err);

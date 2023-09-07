@@ -1,4 +1,4 @@
-import * as Errors from '#config/Errors';
+import {Errors, Error} from "#config/Errors";
 
 class PlayerModel {
     static update(tick, user, message, offset) {
@@ -7,7 +7,7 @@ class PlayerModel {
         const modelType = message.readUInt8(offset);
         offset++;
         if (modelId < 0 || modelId > 65535) {
-            tick.server.sendError(Errors.Error.INVALID_MODEL, remote);
+            tick.server.sendError(Error.INVALID_MODEL, remote);
         } else {
             tick.server.users.users[user.id].modelId = modelId;
             tick.server.users.users[user.id].modelType = modelType == 0 ? 0 : 1;

@@ -1,6 +1,6 @@
 import Group from '#group/Group';
 import * as Packets from '#server/Packets';
-import * as Errors from '#config/Errors';
+import {Errors, Error} from "#config/Errors";
 import Util from '#server/Util';
 
 class GroupList {
@@ -25,14 +25,14 @@ class GroupList {
 					Util.log(`${users.users[userId].username} has created a group (${userId})`);
 					this.addUser(groupId, userId);
 				} else {
-					this.server.sendError(Errors.Error.ALREADY_IN_GROUP, remote);
+					this.server.sendError(Error.ALREADY_IN_GROUP, remote);
 				}
 			} else {
-				this.server.sendError(Errors.Error.INVALID_WORLD, remote);
+				this.server.sendError(Error.INVALID_WORLD, remote);
 			}
 			return;
 		}
-		this.server.sendError(Errors.Error.INVALID_LOGIN, remote);
+		this.server.sendError(Error.INVALID_LOGIN, remote);
 	}
 
 	addUser(groupId, userId) {
@@ -47,10 +47,10 @@ class GroupList {
 				//this.sendUserList(userId, groupId);
 				this.server.users.setNeedsUpdate(userId); // needsUpdate flag will always send the user list for the region they're in
 			} else {
-				return Errors.Error.ALREADY_IN_GROUP;
+				return Error.ALREADY_IN_GROUP;
 			}
 		} else {
-			return Errors.Error.INVALID_GROUP;
+			return Error.INVALID_GROUP;
 		}
 	}
 
@@ -67,7 +67,7 @@ class GroupList {
 				}
 			} else {
 				Util.debug("user was not in group, cannot remove", groupId, userId);
-				return Errors.Error.ALREADY_IN_GROUP;
+				return Error.ALREADY_IN_GROUP;
 			}
 		} else {
 			Util.debug("error removing user from group", this.groups[groupId], this.server.users.users[userId], this.server.users.users[userId].groupId == groupId);
@@ -80,12 +80,12 @@ class GroupList {
 		// packet structure PLAYER_UPDATE UPDATE_TYPE PLAYER_ID UPDATE_DATA...
 		if (!this.server.users.users[userToReceiveUpdateId] || !this.server.users.users[userToUpdateId]) {
 			console.error(`tried to update players that did not actually exist: ${userToReceiveUpdateId} & ${userToUpdateId}`);
-			return Errors.Error.INVALID_UPDATE;
+			return Error.INVALID_UPDATE;
 		}
 
 		if (!this.server.users.users[userToReceiveUpdateId].remote) {
 			console.error(`${userToReceiveUpdateId} did not have a socket open!`);
-			return Errors.Error.NO_CONNECTION_AVAILABLE;
+			return Error.NO_CONNECTION_AVAILABLE;
 		}
 		// they don't need to update themselves that would be ridiculous
 		if (userToReceiveUpdateId == userToUpdateId) {
@@ -117,11 +117,11 @@ class GroupList {
 		const group = this.server.groups.groups[groupId];
 
 		if (!user?.remote) {
-			return Errors.Error.INVALID_USER;
+			return Error.INVALID_USER;
 		}
 
 		if (!group) {
-			return Errors.Error.INVALID_GROUP;
+			return Error.INVALID_GROUP;
 		}
 
 		const remote = user.remote;
@@ -160,10 +160,10 @@ class GroupList {
 	// used when a new group is created so the player knows what their group ID is for sharing.
 	sendGroupInfo(userId, groupId) {
 		if (!this.groups[groupId]) {
-			return Errors.Error.INVALID_GROUP;
+			return Error.INVALID_GROUP;
 		}
 		if (!this.server.users.users[userId]?.remote) {
-			return Errors.Error.INVALID_USER_ID || Errors.Error.NO_CONNECTION_AVAILABLE;
+			return Error.INVALID_USER_ID || Error.NO_CONNECTION_AVAILABLE;
 		}
 		const remote = this.server.users.users[userId].remote;
 		const packet = this.server.createPacket(Packets.Packet.GROUP_INFO);

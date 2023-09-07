@@ -58,13 +58,12 @@ class MasterServer {
 		const opCode = message.readUInt8(offset);
 		offset++;
 		switch (opCode) {
-			case Packets.Packet.MASTER_SERVER_POLL: // sent by a server who wishes to register on the master serve
+			case Packets.Packet.MASTER_SERVER_POLL: // sent by a server who wishes to register on the master server
 				let serverAddress = remote.address + ":" + remote.port;
-				if (this.servers.get(serverAddress) != null) {
-					return;
+				if (this.servers.get(serverAddress) == null) {
+					Util.log(`${Colors.YELLOW}Orb@${JSON.stringify(serverAddress)} has been registered`);
 				}
 				let serverHash = this.generateServerHash(serverAddress);
-				Util.log(`${Colors.YELLOW}Orb ${JSON.stringify(serverAddress)} has been registered`);
 				this.servers.set(serverHash, Util.currentTime());
 				break;
 

@@ -1,4 +1,4 @@
-import * as Errors from "#config/Errors";
+import {Errors, Error} from "#config/Errors";
 import Util from "#server/Util";
 
 class UserLogout {
@@ -8,7 +8,7 @@ class UserLogout {
 			const userId = verify.id;
 			if (!server.users.users[userId]) {
 				Util.debug("a user tried logging out but was never logged in!");
-				return Errors.Error.INVALID_LOGIN;
+				return Error.INVALID_LOGIN;
 			}
 			if (server.users.users[userId].numericId > -1) {
 				const numericId = server.users.users[userId].numericId;
