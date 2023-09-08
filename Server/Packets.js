@@ -21,8 +21,7 @@ export const Packets = [
 	"GROUP_END_GAME", // TODO: End the game
 	"GROUP_SET_STAGE", // TODO: Set the play area
 
-	"WORLD_OBJECT", // used in adding/removing objects
-	"WORLD_NPC", // used in adding/removing npcs
+	"WORLD_MODEL", // used in adding/removing objects
 
 	"PLAYER_LIST",
 	"PLAYER_UPDATE", // PLAYER_UPDATE opcode is followed by PlayerUpdate type found below

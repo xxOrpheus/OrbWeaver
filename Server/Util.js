@@ -12,6 +12,7 @@ class Util {
 	}
 
 	static debug(...args) {
+		
 		if (Config.VERBOSITY > 1) {
 			let line = "";
 			if (args[0] && args[0].stack) {

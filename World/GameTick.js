@@ -23,12 +23,12 @@ class GameTick {
 
 			// TODO: we should check if any memory is being wasted (ghost players, etc)
 			this.garbageCollector = setInterval(() => {
-				for(const userId in this.server.users.users) {
+				for (const userId in this.server.users.users) {
 					let active = this.server.users.users[userId].active;
 					let jwt = this.server.users.users[userId].jwt;
 					let remote = this.server.users.users[userId].remote;
 					let lastActive = Util.currentTime() - active;
-					if(!active || lastActive > Config.LOGOUT_TIMER) {
+					if (!active || lastActive > Config.LOGOUT_TIMER) {
 						this.server.users.logout(null, null, remote, jwt);
 					}
 				}
@@ -48,6 +48,7 @@ class GameTick {
 					delete this.server.users.needsUpdate[userIdToUpdate];
 					continue;
 				}
+
 				const userToUpdateId = this.server.users.needsUpdate[userIdToUpdate];
 				const userToUpdate = this.server.users.users[userToUpdateId];
 				const userRegionId = userToUpdate.regionId;
@@ -63,7 +64,6 @@ class GameTick {
 						// i guess we actually only need the model and location to be updated, the rest only the server needs to know
 						this.updateQueue[Packets.PlayerUpdate.LOCATION].push(userInSameRegionId);
 						//this.updateQueue[Packets.PlayerUpdate.MODEL].push(userInSameRegionId);
-						
 					}
 				}
 			}
@@ -138,6 +138,14 @@ class GameTick {
 				switch (updateType) {
 					case Packets.PlayerUpdate.LOCATION:
 						PlayerLocation.update(this, user, message, offset);
+						//for (let i = 0; i < 500; i++) {
+							this.server.world.modelManager.addModel(10016, user.location, 512, -1);
+						//}
+						//Util.debug(JSON.stringify(user));
+						let packet = this.server.world.modelManager.serializeModels(user.regionId);
+						if (packet) {
+							this.server.world.modelManager.sendModels(user);
+						}
 						break;
 
 					case Packets.PlayerUpdate.MODEL:

@@ -4,6 +4,7 @@ import UserList from "#user/UserList";
 
 
 import GameTick from "#world/GameTick";
+import World from "#world/World";
 
 import dgram from "dgram";
 import Config from "#config/Config";
@@ -138,6 +139,8 @@ class Server {
 							this.gametick.enqueueUpdate(message, offset, remote, token);
 							break;
 					}
+				} else {
+					Util.debug("unknown opcode received: ", opCode);
 				}
 			}
 		} catch (error) {

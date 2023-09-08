@@ -1,5 +1,6 @@
 import {Errors, Error} from "#config/Errors";
 import Util from "#server/Util";
+import * as Packets from "#server/Packets";
 
 class UserLogout {
 	static submit(server, message, offset, remote, token) {

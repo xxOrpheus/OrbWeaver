@@ -12,6 +12,7 @@ export class PlayerLocation {
 		const orientation = message.readUInt16BE(offset);
 		offset += 2;
 		const location = new WorldPoint(x, y, z);
+		Util.debug("made new location object: " + JSON.stringify(location));
 		const regionId = location.getRegionId();
 		// if the region hasn't been entered before we need to instantiate a new array before we can populate it
 		if (!tick.server.users.regionMap[regionId]) {

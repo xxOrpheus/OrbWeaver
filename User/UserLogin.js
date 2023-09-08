@@ -29,7 +29,7 @@ export class UserLogin {
 								server.sendError(Error.INVALID_PASSWORD, remote);
 								return Error.INVALID_PASSWORD;
 							} else {
-								let inactive = Util.currentTime() - playerOnline.lastActive > Config.LOGOUT_TIMER == true;
+								let inactive = Util.currentTime() - playerOnline.active > Config.LOGOUT_TIMER == true;
 								// verify them if they still have the JWT token from the previous session, or bypass the token if they have been inactive
 								if (server.verifyJWT(token)?.id == playerOnline.id || inactive) {
 									if (inactive) {

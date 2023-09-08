@@ -16,6 +16,7 @@ const Config = {
 	DUPLICATE_PACKET_THROTTLE_MS: 600, // Throttle duplicate packets (in ms)
 	DUPLICATE_PACKET_THROTTLE_LIMIT: 1, // Maximum allowed duplicate packets per tick
 	GARBAGE_COLLECTION_FREQ: 60 * 1000 * 5, // run garbage collector every 5 minutes
+	MAX_PACKET_SIZE: 512,
 
 	// Logging
 	VERBOSITY: 2, // Logging verbosity (0 = off, 1 = info, > 1 = debug)
