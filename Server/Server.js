@@ -104,6 +104,7 @@ class Server {
 			}
 
 			offset++;
+
 			let token = Packets.utf8Deserialize(message, 1, offset, remote); // the next part is the (token size+)JWT token, might not be signed so we handle that in the following calls
 			if (token.data.length > 0) {
 				offset = token.offset;

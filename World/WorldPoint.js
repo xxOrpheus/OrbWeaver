@@ -13,6 +13,10 @@ class WorldPoint {
 	getRegionId() {
 		return ((this.x >> 6) << 8) | (this.y >> 6);
 	}
+
+	toString() {
+		return `${this.x}${this.y}${this.z}`;
+	}
 }
 
 export default WorldPoint;

@@ -1,4 +1,4 @@
-import WorldPoint from '#world/WorldPoint';
+import WorldPoint from "#world/WorldPoint";
 import Util from "#server/Util";
 
 export class PlayerLocation {
@@ -12,8 +12,8 @@ export class PlayerLocation {
 		const orientation = message.readUInt16BE(offset);
 		offset += 2;
 		const location = new WorldPoint(x, y, z);
-		Util.debug("made new location object: " + JSON.stringify(location));
 		const regionId = location.getRegionId();
+
 		// if the region hasn't been entered before we need to instantiate a new array before we can populate it
 		if (!tick.server.users.regionMap[regionId]) {
 			tick.server.users.regionMap[regionId] = [];
@@ -39,7 +39,7 @@ export class PlayerLocation {
 			tick.server.users.setNeedsUpdate(user.id);
 		}
 		tick.server.users.users[user.id].location = location;
-		Util.debug(`${user.username} new location: ${x} ${y} ${z} ${orientation}`);
+		//Util.debug(`${user.username} new location: ${x} ${y} ${z} ${orientation}`);
 	}
 }
 

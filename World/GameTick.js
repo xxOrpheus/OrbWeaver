@@ -138,14 +138,6 @@ class GameTick {
 				switch (updateType) {
 					case Packets.PlayerUpdate.LOCATION:
 						PlayerLocation.update(this, user, message, offset);
-						//for (let i = 0; i < 500; i++) {
-							this.server.world.modelManager.addModel(10016, user.location, 512, -1);
-						//}
-						//Util.debug(JSON.stringify(user));
-						let packet = this.server.world.modelManager.serializeModels(user.regionId);
-						if (packet) {
-							this.server.world.modelManager.sendModels(user);
-						}
 						break;
 
 					case Packets.PlayerUpdate.MODEL:
