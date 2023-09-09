@@ -37,7 +37,7 @@ Packets.forEach((action, index) => {
 	Packet[action] = index;
 });
 
-export const PlayerUpdates = ["MODEL", "LOCATION"];
+export const PlayerUpdates = ["MODEL", "LOCATION", "TEAM", "STATUS", "CHAT_MESSAGE"];
 
 PlayerUpdates.forEach((action, index) => {
 	PlayerUpdate[action] = index;

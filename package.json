@@ -1,4 +1,16 @@
 {
+	"tasks": [
+		{
+		  "label": "stopNode",
+		  "type": "shell",
+		  "command": "node",
+		  "args": ["-e", "process.exit(0)"],
+		  "group": {
+			"kind": "build",
+			"isDefault": true
+		  }
+		}
+	  ],
 	"dependencies": {
 		"argon2": "^0.31.0",
 		"bytebuffer": "^5.0.1",

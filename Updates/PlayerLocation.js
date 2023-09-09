@@ -1,5 +1,4 @@
 import WorldPoint from "#world/WorldPoint";
-import Util from "#server/Util";
 
 export class PlayerLocation {
 	static update(tick, user, message, offset) {
@@ -13,6 +12,14 @@ export class PlayerLocation {
 		offset += 2;
 		const location = new WorldPoint(x, y, z);
 		const regionId = location.getRegionId();
+		// this will add a model at the player's new location (testing purposes)
+		/*
+		tick.server.world.modelManager.addModel(10016, user.location, 512, -1);
+		let packet = tick.server.world.modelManager.serializeModels(user.regionId);
+		if (packet) {
+			tick.server.world.modelManager.sendModels(user);
+		}
+		*/ 
 
 		// if the region hasn't been entered before we need to instantiate a new array before we can populate it
 		if (!tick.server.users.regionMap[regionId]) {

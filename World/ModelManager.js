@@ -1,8 +1,7 @@
 import * as Packets from "#server/Packets";
 import Config from "#config/Config";
-import { Errors, Error } from "#config/Errors";
+import { Error } from "#config/Errors";
 import Util from "#server/Util";
-import WorldPoint from "#world/WorldPoint";
 
 class ModelManager {
 	server;
@@ -13,8 +12,7 @@ class ModelManager {
 	constructor(server) {
 		Util.log("ModelManager initialized...");
 		this.server = server;
-		this.models = new Map();
-		this.tileMap = new Map(); // associate indices with locations
+		this.models = new Map(); // really a region map
 		this.regionCache = new Map();
 		this.modelCount = 1;
 	}
@@ -44,7 +42,6 @@ class ModelManager {
 
 		// we use location as the key to avoid duplicate entries on a tile
 		this.models.get(regionId).set(location.toString(), newModel); 
-		this.tileMap.set(location.toString, modelStorageId);
 		this.modelCount++;
 		// we added an model so we need to invalidate the cache
 		// here we  could check if the user is already in the region, and if they are do not invalidate the cache for them, just send the new object
@@ -56,9 +53,9 @@ class ModelManager {
 	removeModel(regionId, location) {
 		if (this.models.has(regionId)) {
 			const modelsInRegion = this.models.get(regionId);
-			if(modelsInRegion.has(location.toString())) {
+			if(modelsInRegion.has(location.toString())) { // check if the tile has an object placed there 
 				modelsInRegion.delete(location.toString());
-				if(modelsInRegion.size < 1) {
+				if(modelsInRegion.size < 1) { // if the region is empty we should just delete it
 					this.models.delete(regionId);
 				}
 				this.invalidateCache(regionId);

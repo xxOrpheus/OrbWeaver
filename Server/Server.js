@@ -1,17 +1,15 @@
 import GroupList from "#group/GroupList";
 import UserList from "#user/UserList";
 
-
-
 import GameTick from "#world/GameTick";
 import World from "#world/World";
 
 import dgram from "dgram";
 import Config from "#config/Config";
-import {Errors, Error} from "#config/Errors";
-import Colors from '#config/Colors';
+import { Errors, Error } from "#config/Errors";
+import Colors from "#config/Colors";
 
-import Util from '#server/Util';
+import Util from "#server/Util";
 import * as Packets from "#server/Packets";
 
 //import * as Errors from '#config/Errors';
@@ -25,6 +23,7 @@ class Server {
 	users;
 	groups;
 	masterServerPoller = null;
+	serverStartedTime = -1; // used for example, when determining if the server was restarted and we should ignore the logged out timer
 
 	constructor() {
 		this.server = dgram.createSocket("udp4");
@@ -48,8 +47,9 @@ class Server {
 		this.users = new UserList(this);
 		this.world = new World(this);
 		this.gametick = new GameTick(this);
+		this.serverStartedTime = Util.currentTime();
 	}
-	
+
 	// poll the master server to register it to the list -- toggle in Config.js (disabled by default)
 	pollMasterServer() {
 		if (Config.POLL_MASTER_SERVER == true) {
@@ -57,13 +57,14 @@ class Server {
 			Util.log(`${Colors.MAGENTA}Contacting master server... (${Colors.WHITE}${Config.MASTER_SERVER}:${Config.MASTER_SERVER_PORT}${Colors.MAGENTA})`);
 			let packet = this.createPacket(Packets.Packet.MASTER_SERVER_POLL);
 			this.sendPacket(packet, remote);
-			if(!this.masterServerPoller) {
+			if (!this.masterServerPoller) {
 				this.masterServerPoller = setInterval(() => this.pollMasterServer(), 30 * 60 * 1000);
 			}
 		}
 	}
 
-	sendServerInfo(remote) { // send basic information about this server: players online, player limit, and server name.
+	sendServerInfo(remote) {
+		// send basic information about this server: players online, player limit, and server name.
 		let packet = this.createPacket(Packets.Packet.SERVER_INFO);
 		let serverName = Config.SERVER_NAME;
 		if (serverName.length > 32) {
@@ -102,7 +103,6 @@ class Server {
 				Util.log(`${Colors.RED}Unsupported packet action: ${opCode}`);
 				return;
 			}
-
 			offset++;
 
 			let token = Packets.utf8Deserialize(message, 1, offset, remote); // the next part is the (token size+)JWT token, might not be signed so we handle that in the following calls
@@ -111,13 +111,12 @@ class Server {
 				token = token.data[0];
 				if (Packets.Packets[opCode] != null) {
 					switch (opCode) {
-						case Packets.Packet.SERVER_INFO: // requested after the user logs in, or when reading the master server list 
+						case Packets.Packet.SERVER_INFO: // requested after the user logs in, or when reading the master server list
 							this.sendServerInfo(remote);
 							break;
 
 						case Packets.Packet.USER_LOGIN:
-							await this.users.login(message, offset, remote, token).then((res) => {
-							});
+							await this.users.login(message, offset, remote, token).then((res) => {});
 							break;
 
 						case Packets.Packet.USER_LOGOUT:
@@ -129,7 +128,7 @@ class Server {
 							break;
 
 						case Packets.Packet.GROUP_JOIN:
-							this.users.joinGroup(message, offset, remote, token)
+							this.users.joinGroup(message, offset, remote, token);
 							break;
 
 						case Packets.Packet.GROUP_LEAVE:

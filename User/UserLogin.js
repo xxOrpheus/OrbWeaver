@@ -11,6 +11,8 @@ export class UserLogin {
 			// check if the server is full before proceeding.
 			if (server.users.users.length + 1 >= Config.MAX_USERS_ONLINE) {
 				server.sendError(Error.SERVER_FULL, remote);
+			Util.debug("here 6");
+
 				return Error.SERVER_FULL;
 			}
 
@@ -29,7 +31,8 @@ export class UserLogin {
 								server.sendError(Error.INVALID_PASSWORD, remote);
 								return Error.INVALID_PASSWORD;
 							} else {
-								let inactive = Util.currentTime() - playerOnline.active > Config.LOGOUT_TIMER == true;
+								let currentTime = Util.currentTime();
+								let inactive = ((currentTime - playerOnline.active) > Config.LOGOUT_TIMER) == true;
 								// verify them if they still have the JWT token from the previous session, or bypass the token if they have been inactive
 								if (server.verifyJWT(token)?.id == playerOnline.id || inactive) {
 									if (inactive) {
@@ -46,6 +49,8 @@ export class UserLogin {
 									}
 								} else {
 									server.sendError(Error.INVALID_LOGIN, remote);
+			Util.debug("here 5");
+
 									return Error.INVALID_LOGIN;
 								}
 							}
@@ -81,11 +86,15 @@ export class UserLogin {
 						});
 					} else {
 						server.sendError(Error.INVALID_WORLD, remote);
+			Util.debug("here 4");
+
 						return Error.INVALID_WORLD;
 					}
 				} else {
 					Util.log(`invalid name ${JSON.stringify(username)}`);
 					server.sendError(Error.INVALID_NAME, remote);
+			Util.debug("here 2");
+
 					return Error.INVALID_NAME;
 				}
 				// no error code was returned, we can safely do any final operations here:
@@ -93,6 +102,7 @@ export class UserLogin {
 				Util.log(`[${userId}] ${username} has logged in (World ${worldNumber})`);
 			}
 		} catch (error) {
+			Util.debug("here ");
 			server.sendError(Error.INVALID_LOGIN, remote);
 			console.debug(error);
 			return Error.INVALID_LOGIN;

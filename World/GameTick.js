@@ -2,6 +2,7 @@ import * as Packets from "#server/Packets";
 import Config from "#config/Config";
 import PlayerLocation from "#updates/PlayerLocation";
 import PlayerModel from "#updates/PlayerModel";
+import ChatMessage from "#updates/ChatMessage";
 import Util from "#server/Util";
 
 class GameTick {
@@ -143,6 +144,11 @@ class GameTick {
 					case Packets.PlayerUpdate.MODEL:
 						PlayerModel.update(this, user, message, offset);
 						break;
+
+					case Packets.PlayerUpdate.CHAT_MESSAGE:
+						ChatMessage.update(this, user, message, offset);
+						break;
+						
 				}
 				this.updateQueue[updateType].push(user.id);
 			}

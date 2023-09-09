@@ -57,7 +57,7 @@ class UserList {
 
 	playerOnline(username) {
 		username = username.toLowerCase().trim();
-		if (!!this.usersOnline[username] && this.users[this.usersOnline[username]]) {
+		if (this.usersOnline[username] && this.users[this.usersOnline[username]]) {
 			return this.users[this.usersOnline[username]];
 		} else {
 			return false;
